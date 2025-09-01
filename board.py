@@ -27,6 +27,20 @@ class Board:
         self.revealed = [[False for _ in range(cols)] for _ in range(rows)]
 
     def place_mines(self, first_click):
+        # this implementation of place_mines will guarantee first click to be on a 0 cell for better playability
+        from random import randint
+        rows, cols = self.size
+        mines_placed = 0
+        while mines_placed < self.mines:
+            r = randint(0, rows - 1)
+            c = randint(0, cols - 1)
+            if (r not in [first_click[0]-1, first_click[0], first_click[0]+1] or c not in [first_click[1]-1, first_click[1], first_click[1]+1]) and self.board[r][c] != -1:
+                self.board[r][c] = -1
+                mines_placed += 1
+
+    '''
+    def place_mines(self, first_click):
+        # this implementation of place_mines will just guarantee first click to not be a mine
         from random import randint
         rows, cols = self.size
         mines_placed = 0
@@ -36,14 +50,42 @@ class Board:
             if (r, c) != first_click and self.board[r][c] != -1:
                 self.board[r][c] = -1
                 mines_placed += 1
+    '''
  
     def update_mine_counts(self):
-        assert False # TODO
+        # call after place_mines to update counts of adjacent mines for each cell
+        rows, cols = self.size
+        directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+        for r in range(rows):
+            for c in range(cols):
+                if self.board[r][c] == -1:
+                    continue
+                count = 0
+                for dr, dc in directions:
+                    nr, nc = r + dr, c + dc
+                    if 0 <= nr < rows and 0 <= nc < cols and self.board[nr][nc] == -1:
+                        count += 1
+                self.board[r][c] = count
 
-    def reveal_cell(self, row, col):
-        assert False # TODO
+    def reveal_cell(self, click):
+        row, col = click[0], click[1]
+        # call after each click, revealing the cell at (row, col) and any adjacent cells if it has 0 adjacent mines
+        rows, cols = self.size
+        if self.board[row][col] == -1:
+            return False
+        if self.revealed[row][col]:
+            return True
+        self.revealed[row][col] = True
+        if self.board[row][col] == 0: # recursively update adjacent cells if 0
+            directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
+            for dr, dc in directions:
+                nr, nc = row + dr, col + dc
+                if 0 <= nr < rows and 0 <= nc < cols and not self.revealed[nr][nc]:
+                    self.reveal_cell((nr, nc))
+        return True
 
     def check_win(self):
+        # win condition: all non-mine cells revealed
         assert False # TODO
 
     def print_board(self, show_mines=False): # for debugging
@@ -56,13 +98,17 @@ class Board:
                     else:
                         print(self.board[r][c], end=' ')
                 else:
-                    if show_mines and self.board[r][c] == -1:
-                        print('*', end=' ')
-                    else:
-                        print(self.board[r][c], end=' ')
+                    print('/', end=' ')
+                # else:
+                #     if show_mines and self.board[r][c] == -1:
+                #         print('X', end=' ')
+                #     else:
+                #         print(self.board[r][c], end=' ')
             print()
 
 if __name__ == "__main__":
     b = Board(1)
-    b.place_mines((0, 0))
-    b.print_board(True)
+    b.place_mines((4, 5))
+    b.reveal_cell((4, 5))
+    b.update_mine_counts()
+    b.print_board()
