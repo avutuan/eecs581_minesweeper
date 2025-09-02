@@ -10,17 +10,24 @@ class Board:
     5. check_win(): check if all non-mine cells are revealed
     6. print_board(show_mines=False): print the board to console, optionally showing mines (mainly for debugging, not actual UI)
     '''
-    def __init__(self, difficulty):
+
+    #TODO: change mine count to be user-specified, default 10x10 board, label columns and rows
+    #TODO: add flags functionality and counter of remaining flags/mines
+
+    def __init__(self, mines):
         '''
         difficulties        board size          mines
         1: easy             9x9                 10
         2: medium           16x16               40
         3: hard             30x16               99
         '''
-        self.difficulty = difficulty
-        rows = 9 if difficulty == 1 else 16
-        cols = 9 if difficulty == 1 else 16 if difficulty == 2 else 30 
-        self.mines = 10 if difficulty == 1 else 40 if difficulty == 2 else 99
+        # obsolete code commented out
+        # self.difficulty = difficulty
+        # rows = 9 if difficulty == 1 else 16
+        # cols = 9 if difficulty == 1 else 16 if difficulty == 2 else 30 
+        rows = 10
+        cols = 10
+        self.mines = mines
         self.size = (rows, cols)
         self.board = [[0 for _ in range(cols)] for _ in range(rows)] 
         # store board as array of ints where each int is the number of adjacent mines, -1 if mine
@@ -72,6 +79,7 @@ class Board:
         # call after each click, revealing the cell at (row, col) and any adjacent cells if it has 0 adjacent mines
         rows, cols = self.size
         if self.board[row][col] == -1:
+            self.revealed[row][col] = True
             return False
         if self.revealed[row][col]:
             return True
@@ -90,7 +98,9 @@ class Board:
 
     def print_board(self, show_mines=False): # for debugging
         rows, cols = self.size
+        print('  1 2 3 4 5 6 7 8 9 10 ')
         for r in range(rows):
+            print('ABCDEFGHIJ'[r], end=' ')
             for c in range(cols):
                 if self.revealed[r][c]:
                     if self.board[r][c] == -1:
@@ -106,9 +116,27 @@ class Board:
                 #         print(self.board[r][c], end=' ')
             print()
 
+# simple text-based UI for testing
 if __name__ == "__main__":
-    b = Board(1)
-    b.place_mines((4, 5))
-    b.reveal_cell((4, 5))
-    b.update_mine_counts()
+    b = Board(10)
     b.print_board()
+    first_click = input("Enter your first click (e.g. A5): ")
+    letter_to_row = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5, 'G': 6, 'H': 7, 'I': 8, 'J': 9}
+    row = letter_to_row[first_click[0].upper()]
+    col = int(first_click[1:]) - 1
+    b.place_mines((row, col))
+    b.update_mine_counts()
+    b.reveal_cell((row, col))
+    while True:
+        b.print_board()
+        click = input("Enter your next click (e.g. A5), or 'q' to quit: ")
+        if click.lower() == 'q':
+            break
+        row = letter_to_row[click[0].upper()]
+        col = int(click[1:]) - 1
+        if not b.reveal_cell((row, col)):
+            print("Game Over! You hit a mine.")
+            b.print_board(show_mines=True)
+            break
+    
+
