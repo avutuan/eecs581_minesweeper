@@ -1,11 +1,11 @@
 ## EECS 581 Project 1: Minesweeper
 ### Group & Team Structure:
-- Aiden Burke
-- Nick Holmes
-- Riley Meyerkorth
-- Andrew Reyes
-- Brett Suhr
-- Ty Farrington
+- **Project Coordinator:** Riley Meyerkorth
+- **Backend Developer:** Aiden Burke
+- **Backend Developer:** Brett Suhr
+- **Frontend Developer:** Nick Holmes
+- **Quality Assurance & Testing Lead:** Andrew Reyes
+- **Documentation & Communication Lead:** Ty Farrington
 
 ### Roadmap:
 - Set up backend functionality for storing the minesweeper board
