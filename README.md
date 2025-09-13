@@ -1,5 +1,7 @@
-## EECS 581 Project 1: Minesweeper
-### Group & Team Structure:
+# EECS 581 Project 1: Minesweeper
+
+## Group & Team Structure
+
 - **Project Coordinator:** Riley Meyerkorth
 - **Backend Developer:** Aiden Burke
 - **Backend Developer:** Brett Suhr
@@ -7,7 +9,8 @@
 - **Quality Assurance & Testing Lead:** Andrew Reyes
 - **Documentation & Communication Lead:** Ty Farrington
 
-### Roadmap:
+## Roadmap
+
 - Set up backend functionality for storing the minesweeper board
   - Current to do:
   - Update board functionality to include flags, flagged cells cannot be uncovered until unflagged
