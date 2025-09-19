@@ -1,5 +1,7 @@
-## EECS 581 Project 1: Minesweeper
-### Group & Team Structure:
+# EECS 581 Project 1: Minesweeper
+
+## Group & Team Structure
+
 - **Project Coordinator:** Riley Meyerkorth
 - **Backend Developer:** Aiden Burke
 - **Backend Developer:** Brett Suhr
@@ -7,7 +9,8 @@
 - **Quality Assurance & Testing Lead:** Andrew Reyes
 - **Documentation & Communication Lead:** Ty Farrington
 
-### Roadmap (future enhancements)
+## Roadmap (future enhancements)
+
 - Backend HTTP mode parity with demo mode
   - Implement flags and alive/win tracking in Python `Board`
   - Add `/api/flag` logic and persist state between requests
@@ -27,15 +30,17 @@
   - Theming presets; color-blind friendly palette
   - PWA installability and offline demo mode
 
-### Project structure
+## Project structure
 
-Root
+### Root
+
 - `board.py` — Python board logic (mines placement, reveal, win check)
 - `requirements.txt` — Python dependencies (FastAPI backend optional)
 - `README.md` — this file
 - `.gitignore` — ignores Node, Python, and editor artifacts
 
-Frontend (`frontend/`)
+### Frontend (`frontend/`)
+
 - `package.json` — Node dependencies and scripts (`npm run dev`)
 - `vite.config.js` — Vite dev server config and `/api` proxy
 - `postcss.config.js` — PostCSS + Tailwind setup
@@ -50,25 +55,32 @@ Frontend (`frontend/`)
 
 ### Setup (run the frontend)
 
-Prereqs:
+#### Prereqs
+
 - Node.js (18+ recommended) and npm
 
-Steps:
-1) Install dependencies (from the `frontend/` directory):
+#### Steps
 
-```
+##### 1
+
+Install dependencies (from the `frontend/` directory):
+
+```bash
 cd frontend
 npm install
 ```
 
-2) Start the dev server:
+##### 2
 
-```
+Start the dev server:
+
+```bash
 npm run dev
 ```
 
 Vite will print a local URL (for example `http://localhost:5173` or `5174`). Open it in your browser.
 
-Notes:
+### Notes
+
 - The app runs fully in demo mode (no backend required).
 - If you later want to use the Python backend, start it separately and update the frontend to use HTTP mode (set `VITE_API_MODE=http`).
