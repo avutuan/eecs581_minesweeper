@@ -23,11 +23,7 @@
     {#each Array(state.cols) as __, c}
       {#key (r+'-'+c)}
         <button
-          class="aspect-square rounded-xl border
-                 bg-slate-100 dark:bg-slate-800
-                 hover:bg-slate-200 dark:hover:bg-slate-700
-                 disabled:opacity-70
-                 flex items-center justify-center"
+          class={`aspect-square rounded-xl border ${state?.revealed[r][c] ? "bg-slate-150 dark:bg-slate-900" : "bg-slate-100 dark:bg-slate-800"} hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-70 flex items-center justify-center`}
           on:click={() => cellClick(r,c)}
           on:contextmenu={(e) => cellFlag(e, r, c)}
           disabled={!state.alive || state.win}
@@ -37,6 +33,7 @@
             {cellContent(state.board[r][c], state.flags[r][c])}
           </span>
         </button>
+        {console.log(state)}
       {/key}
     {/each}
   {/each}
