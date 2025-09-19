@@ -89,9 +89,10 @@ class Board:
         return True
 
     
-    def check_win(self):
+    def check_win(self) -> bool:
         """
         Checks if the player has won the game (all non-mine cells revealed).
+        Returns True if the player has won, False otherwise.
         """
         # win condition: all non-mine cells revealed
         rows, cols = self.size
@@ -102,7 +103,7 @@ class Board:
         return True
 
     
-    def print_board(self, show_mines: bool = False):
+    def print_board(self, show_mines: bool = False) -> None:
         """
         Prints the board to console.
         Primarily for debugging purposes.
