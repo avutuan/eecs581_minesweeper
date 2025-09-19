@@ -84,3 +84,4 @@ Vite will print a local URL (for example `http://localhost:5173` or `5174`). Ope
 
 - The app runs fully in demo mode (no backend required).
 - If you later want to use the Python backend, start it separately and update the frontend to use HTTP mode (set `VITE_API_MODE=http`).
+- To run test cases, navigate to the `eecs581_minesweeper` directory and run `python test_minesweeper.py`.
