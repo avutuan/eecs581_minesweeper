@@ -1,1 +1,24 @@
-__pycache__/
+
+# Node / frontend artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Python artifacts
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Logs and local env
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+.env
+.env.*
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
