@@ -1,5 +1,5 @@
 # board.py
-from constants import CHAR_MINE, CHAR_UNREVEALED, COLUMN_TITLES, DEFAULT_COLS, DEFAULT_ROWS, ROW_TITLES
+from constants import CHAR_MINE, CHAR_UNREVEALED, DEFAULT_COLS, DEFAULT_ROWS, ROW_TITLES
 from directions import DIRECTIONS
 from dataclasses import dataclass
 
@@ -22,14 +22,14 @@ class Board:
     #TODO: change mine count to be user-specified, default 10x10 board, label columns and rows
     #TODO: add flags functionality and counter of remaining flags/mines
 
-    def __init__(self, mines):
-        rows = DEFAULT_ROWS
-        cols = DEFAULT_COLS
-        self.mines = mines
-        self.size = (rows, cols)
-        self.board = [[0 for _ in range(cols)] for _ in range(rows)] 
+    def __init__(self, mines: int):
+        rows: int = DEFAULT_ROWS
+        cols: int = DEFAULT_COLS
+        self.mines: int = mines
+        self.size: tuple[int, int] = (rows, cols)
+        self.board: list[list[int]] = [[0 for _ in range(cols)] for _ in range(rows)]
         # store board as array of ints where each int is the number of adjacent mines, -1 if mine
-        self.revealed = [[False for _ in range(cols)] for _ in range(rows)]
+        self.revealed: list[list[bool]] = [[False for _ in range(cols)] for _ in range(rows)]
 
     def place_mines(self, first_pos: BoardPos) -> None:
         """
@@ -102,7 +102,7 @@ class Board:
         return True
 
     
-    def print_board(self, show_mines=False):
+    def print_board(self, show_mines: bool = False):
         """
         Prints the board to console.
         Primarily for debugging purposes.
@@ -134,8 +134,10 @@ class Board:
                 #         print(self.board[r][c], end=' ')
             print()
 
-    def to_dict(self, reveal_all=False):
-        # Convert board state to dictionary format expected by frontend
+    def to_dict(self, reveal_all: bool = False) -> dict[str, any]:
+        """
+        Convert board state to dictionary format expected by frontend
+        """
         rows, cols = self.size
         board = [[None for _ in range(cols)] for _ in range(rows)]
         flags = [[False for _ in range(cols)] for _ in range(rows)]  # TODO: implement flags
