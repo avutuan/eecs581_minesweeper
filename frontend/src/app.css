@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --card: 0 0% 100%;
+  --muted: 210 40% 96%;
+}
+body { @apply bg-slate-50 text-slate-900; }
+.dark body { @apply bg-slate-900 text-slate-100; }
+
+/* Inputs: keep text readable in dark mode */
+input[type="number"], input[type="text"], input[type="search"], input[type="email"], input[type="password"] {
+  @apply text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700;
+}

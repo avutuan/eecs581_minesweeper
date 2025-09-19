@@ -94,7 +94,12 @@ class Board:
 
     def check_win(self):
         # win condition: all non-mine cells revealed
-        assert False # TODO
+        rows, cols = self.size
+        for r in range(rows):
+            for c in range(cols):
+                if self.board[r][c] != -1 and not self.revealed[r][c]:
+                    return False
+        return True
 
     def print_board(self, show_mines=False): # for debugging
         rows, cols = self.size
@@ -115,6 +120,30 @@ class Board:
                 #     else:
                 #         print(self.board[r][c], end=' ')
             print()
+
+    def to_dict(self, reveal_all=False):
+        # Convert board state to dictionary format expected by frontend
+        rows, cols = self.size
+        board = [[None for _ in range(cols)] for _ in range(rows)]
+        flags = [[False for _ in range(cols)] for _ in range(rows)]  # TODO: implement flags
+        
+        for r in range(rows):
+            for c in range(cols):
+                if self.revealed[r][c] or reveal_all:
+                    board[r][c] = self.board[r][c]
+                else:
+                    board[r][c] = None
+        
+        return {
+            'rows': rows,
+            'cols': cols, 
+            'mines': self.mines,
+            'board': board,
+            'revealed': [row[:] for row in self.revealed],
+            'flags': flags,
+            'alive': True,  # TODO: track game state
+            'win': self.check_win()
+        }
 
 # simple text-based UI for testing
 if __name__ == "__main__":
