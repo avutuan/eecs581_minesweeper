@@ -8,8 +8,12 @@ Author(s): Riley Meyerkorth
 Creation Date: 10 September 2025
 """
 
-from board import Board, BoardPos
-from constants import DEFAULT_MINE_COUNT, KEY_QUIT, LETTER_TO_ROW
+from .board import Board, BoardPos
+from .constants import (
+    DEFAULT_MINE_COUNT,
+    KEY_QUIT,
+    LETTER_TO_ROW
+)
 
 class Controller:
     """
@@ -68,6 +72,15 @@ class Controller:
         col = int(click[1:]) - 1
         pos = BoardPos(row, col)
         if not self._board.reveal_cell(pos):
+            self._board.print_board(show_mines=True)
             print("Game Over! You hit a mine.")
+            return False
+        
+        # Check for win after a successful reveal
+        if self._board.check_win():
+            print("Congratulations! You cleared the board.")
             self._board.print_board(show_mines=True)
             return False
+
+        # Continue the game loop
+        return True

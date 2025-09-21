@@ -8,8 +8,16 @@ Author(s): Aiden Burke, Riley Meyerkorth
 Creation Date: 1 September 2025
 """
 
-from constants import CELL_BLANK, CELL_MINE, CHAR_MINE, CHAR_UNREVEALED, DEFAULT_COLS, DEFAULT_ROWS, ROW_TITLES
-from directions import DIRECTIONS
+from .constants import (
+    CELL_BLANK,
+    CELL_MINE,
+    CHAR_MINE,
+    CHAR_UNREVEALED,
+    DEFAULT_COLS,
+    DEFAULT_ROWS,
+    ROW_TITLES,
+)
+from .directions import DIRECTIONS
 from dataclasses import dataclass
 
 @dataclass
@@ -117,12 +125,15 @@ class Board:
         # Reveal the cell
         self.revealed[row][col] = True
 
-        # If the cell is blank, recursively reveal adjacent cells
+        # If the cell is blank, recursively reveal adjacent cells.
+        # IMPORTANT: Do not reveal mines during flood fill.
         if self.board[row][col] == CELL_BLANK:
             for dr, dc in DIRECTIONS:
                 nPos = BoardPos(row + dr, col + dc)
                 if 0 <= nPos.x < rows and 0 <= nPos.y < cols and not self.revealed[nPos.x][nPos.y]:
-                    self.reveal_cell(nPos)
+                    # Skip revealing mines during expansion
+                    if self.board[nPos.x][nPos.y] != CELL_MINE:
+                        self.reveal_cell(nPos)
         return True
     
     def check_win(self) -> bool:

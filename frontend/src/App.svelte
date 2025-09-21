@@ -64,7 +64,8 @@
   async function onCellClick(e) {
     const { row, col } = e.detail;
     const res = await api.click({ row, col });
-    state = res.state;
+    const refresh = await api.state(); // NEW: get updated state AFTER click
+    state = refresh.state;
   }
   async function onCellFlag(e) {
     const { row, col } = e.detail;
