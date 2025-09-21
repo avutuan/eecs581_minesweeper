@@ -40,3 +40,24 @@ These are the project requirements in a checkbox format from the Canvas turn-in 
 
 - [x] Loss: Triggered by uncovering a mine, revealing all mines
 - [x] Win: Achieved by uncovering all non-mine cells without detonating any mines
+
+# Future Out-of-Scope Enhancements
+
+- Backend HTTP mode parity with demo mode
+  - Implement flags and alive/win tracking in Python `Board`
+  - Add `/api/flag` logic and persist state between requests
+  - Optional: difficulty presets (Beginner/Intermediate/Expert)
+- Game features
+  - Persisted timer in backend; include elapsed time in API
+  - Leaderboard (fastest time per difficulty) with a simple DB
+  - Sound effects and subtle animations for reveals/flags
+  - Keyboard accessibility and screen-reader improvements
+  - Mobile layout polish; larger tap targets
+- Quality & DX
+  - Unit tests for engine (JS demo and Python back end)
+  - E2E tests (Playwright) for core flows
+  - CI workflow: lint, test, build
+  - Deploy frontend (Netlify/Vercel) and backend (Railway/Fly.io)
+- Nice-to-haves
+  - Theming presets; color-blind friendly palette
+  - PWA installability and offline demo mode
