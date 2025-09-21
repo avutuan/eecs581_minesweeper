@@ -1,8 +1,8 @@
 # test_minesweeper.py
+from backend.board import Board, BoardPos
+from backend.constants import DEFAULT_ROWS, DEFAULT_COLS, DEFAULT_MINE_COUNT, CHAR_MINE, CHAR_UNREVEALED
+from backend.directions import DIRECTIONS
 
-from board import Board, BoardPos
-from constants import DEFAULT_ROWS, DEFAULT_COLS, DEFAULT_MINE_COUNT, CHAR_MINE, CHAR_UNREVEALED
-from directions import DIRECTIONS
 
 class TestBoardCreation:
     # test that board.__init__ creates a board with the correct properties
