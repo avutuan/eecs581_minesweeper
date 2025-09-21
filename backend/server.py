@@ -11,17 +11,8 @@ Creation Date: 18 September 2025
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-import os
-import sys
 
-# Ensure the project root is on sys.path so 'backend' can be imported
-# when running this file directly (e.g., `python frontend/src/server.py`).
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
-
-from backend.board import Board, BoardPos, BoardSize
+from .board import Board, BoardPos, BoardSize
 
 app = FastAPI()
 
@@ -108,8 +99,6 @@ def toggle_flag(c: Click):
     # Toggle flag at the specified position
     board.flag_cell(BoardPos(c.row, c.col))    
     
-    # Toggle flag (simplified - just return current state for now)
-    # TODO: Implement actual flagging logic in Board class
     return {
         "ok": True,
         "state": board.to_dict(),
