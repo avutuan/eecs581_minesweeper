@@ -11,6 +11,7 @@ Creation Date: 1 September 2025
 from .constants import (
     CELL_BLANK,
     CELL_MINE,
+    CHAR_FLAG,
     CHAR_MINE,
     CHAR_UNREVEALED,
     DEFAULT_COLS,
@@ -50,9 +51,13 @@ class Board:
     def __init__(self, mines: int):
         self.mines: int = mines
         self.size: BoardSize = BoardSize(DEFAULT_ROWS, DEFAULT_COLS)
-        self.board: list[list[int]] = [[0 for _ in range(self.size.cols)] for _ in range(self.size.rows)]
         # store board as array of ints where each int is the number of adjacent mines, CELL_MINE if mine
+        self.board: list[list[int]] = [[0 for _ in range(self.size.cols)] for _ in range(self.size.rows)]
         self.revealed: list[list[bool]] = [[False for _ in range(self.size.cols)] for _ in range(self.size.rows)]
+        # flags are tracked separately from board values
+        self.flags: list[list[bool]] = [[False for _ in range(self.size.cols)] for _ in range(self.size.rows)]
+        self.numOfFlags: int = 0
+        self.isAlive: bool = True
 
     def place_mines(self, first_pos: BoardPos) -> None:
         """
@@ -102,7 +107,19 @@ class Board:
                 # Update the cell with the count
                 self.board[r][c] = count
 
-    
+    def flag_cell(self, pos: BoardPos) -> None:
+        """
+        Flags or unflags the cell at `pos`.
+        pos: BoardPos object representing the cell to flag/unflag
+        """
+        row, col = pos.x, pos.y
+        # Do not allow flagging revealed cells
+        if self.revealed[row][col]:
+            return
+        # Toggle flag state without modifying underlying board values
+        self.flags[row][col] = not self.flags[row][col]
+        self.numOfFlags += 1 if self.flags[row][col] else -1
+
     def reveal_cell(self, pos: BoardPos) -> bool:
         """
         Reveals the cell at `pos`. If the cell has 0 adjacent mines, recursively reveals adjacent cells.
@@ -113,9 +130,14 @@ class Board:
         row, col = pos.x, pos.y
         rows, cols = self.size.rows, self.size.cols
 
+        # Don't reveal flagged cells
+        if self.flags[row][col]:
+            return True
+
         # If the cell is a mine, game over
         if self.board[row][col] == CELL_MINE:
             self.revealed[row][col] = True
+            self.isAlive = False
             return False
         
         # If the cell is already revealed, do nothing
@@ -141,11 +163,10 @@ class Board:
         Checks if the player has won the game (all non-mine cells revealed).
         Returns True if the player has won, False otherwise.
         """
-        # win condition: all non-mine cells revealed
+        # win condition: all non-mine cells revealed (flags are cosmetic)
         rows, cols = self.size.rows, self.size.cols
         for r in range(rows):
             for c in range(cols):
-                # If it's not a mine and not revealed, not a win and return early
                 if self.board[r][c] != CELL_MINE and not self.revealed[r][c]:
                     return False
         return True
@@ -199,7 +220,7 @@ class Board:
         """
         rows, cols = self.size.rows, self.size.cols
         board = [[None for _ in range(cols)] for _ in range(rows)]
-        flags = [[False for _ in range(cols)] for _ in range(rows)]  # TODO: implement flags
+        flags = [[False for _ in range(cols)] for _ in range(rows)]
         
         # Fill in board with current state
         for r in range(rows):
@@ -208,6 +229,9 @@ class Board:
                     board[r][c] = self.board[r][c]
                 else:
                     board[r][c] = None
+
+                # Fill in flags from separate matrix
+                flags[r][c] = self.flags[r][c]
         
         # Return the board state as a dictionary
         return {
@@ -217,6 +241,7 @@ class Board:
             'board': board,
             'revealed': [row[:] for row in self.revealed],
             'flags': flags,
-            'alive': True,  # TODO: track game state
+            'numOfFlags': self.numOfFlags,
+            'alive': self.isAlive,
             'win': self.check_win()
         }

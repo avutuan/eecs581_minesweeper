@@ -2,7 +2,7 @@
 
 This directory contains the frontend of the application as a [Svelte](https://svelte.dev/) web application.
 
-# Directory Structure
+## Directory Structure
 
 - `package.json` - Node dependencies and scripts (`npm run dev`)
 - `vite.config.js` - Vite dev server config and `/api` proxy
@@ -16,16 +16,16 @@ This directory contains the frontend of the application as a [Svelte](https://sv
   - `lib/api.js` - demo-mode engine and HTTP stubs; swap via `VITE_API_MODE`
   - `server.py` - example FastAPI server (optional HTTP mode)
 
-# Setup
+## Setup
 
-## Environment Dependencies
+### Environment Dependencies
 
 - [Node.js v18+](https://nodejs.org/)
 - [npm](https://www.npmjs.com/)
 
-## Steps
+### Steps
 
-### 1
+#### 1
 
 Ensure that you are within the `frontend` directory. If you opened the repo in an IDE from the root, run the following command in the terminal:
 
@@ -33,7 +33,7 @@ Ensure that you are within the `frontend` directory. If you opened the repo in a
 cd frontend
 ```
 
-### 2
+#### 2
 
 Install the frontend dependencies:
 
@@ -41,7 +41,7 @@ Install the frontend dependencies:
 npm install
 ```
 
-### 3
+#### 3
 
 Start the dev server:
 
@@ -51,10 +51,11 @@ npm run dev
 
 Vite will print a local URL (for example `http://localhost:5173` or `5174`).
 
-### 4
+#### 4
 
 Open the printed local URL in your browser.
 
-# Notes
+## Notes
+
 - The app runs fully in demo mode (no backend required).
 - If you later want to use the Python backend, start it separately and update the frontend to use HTTP mode (set `VITE_API_MODE=http`).

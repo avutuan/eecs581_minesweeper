@@ -54,6 +54,13 @@ def new_game(params: NewGameParams):
     board.size = BoardSize(params.rows, params.cols)
     board.board = [[0 for _ in range(params.cols)] for _ in range(params.rows)]
     board.revealed = [[False for _ in range(params.cols)] for _ in range(params.rows)]
+    # Reset flags and status to match new size
+    if hasattr(board, 'flags'):
+        board.flags = [[False for _ in range(params.cols)] for _ in range(params.rows)]
+    if hasattr(board, 'numOfFlags'):
+        board.numOfFlags = 0
+    if hasattr(board, 'isAlive'):
+        board.isAlive = True
     initialized = False
     alive = True
     return {"ok": True, "state": board.to_dict()}
@@ -81,7 +88,7 @@ def click(c: Click):
         initialized = True
     
     alive = board.reveal_cell(BoardPos(c.row, c.col))
-    win = board.check_win() if alive else False
+    win = board.check_win()
     
     return {
         "ok": True,
@@ -97,6 +104,9 @@ def toggle_flag(c: Click):
         return {"ok": False, "error": "No game"}
     if not alive:
         return {"ok": True, "state": board.to_dict(reveal_all=True), "alive": alive, "win": False}
+    
+    # Toggle flag at the specified position
+    board.flag_cell(BoardPos(c.row, c.col))    
     
     # Toggle flag (simplified - just return current state for now)
     # TODO: Implement actual flagging logic in Board class
