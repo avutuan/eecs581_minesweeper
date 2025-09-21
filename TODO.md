@@ -2,6 +2,8 @@
 
 These are the project requirements in a checkbox format from the Canvas turn-in spot.
 
+# Program Requirements
+
 ## Game Setup
 
 ### Board Configuration
@@ -41,7 +43,7 @@ These are the project requirements in a checkbox format from the Canvas turn-in 
 - [x] Loss: Triggered by uncovering a mine, revealing all mines
 - [x] Win: Achieved by uncovering all non-mine cells without detonating any mines
 
-# Future Out-of-Scope Enhancements
+## Future Out-of-Scope Enhancements
 
 - Backend HTTP mode parity with demo mode
   - Implement flags and alive/win tracking in Python `Board`
@@ -61,3 +63,44 @@ These are the project requirements in a checkbox format from the Canvas turn-in 
 - Nice-to-haves
   - Theming presets; color-blind friendly palette
   - PWA installability and offline demo mode
+
+# Documentation Requirements
+
+## System Documentation
+
+### Person-Hours Estimate
+
+- [ ] Detail methodology for estimated hours
+
+### Actual Person-Hours
+
+- [ ] Day-by-day accounting for each member's hours (excluding lectures)
+- [ ] Submit Excel spreadsheet PDF of hours
+
+### System Architecture Overview
+
+- [ ] High-level description of components
+- [ ] High-level diagrams of components
+- [ ] High-level diagram of dataflow
+- [ ] High-level diagrams of key data structures 
+
+## Code Documentation and Comments
+
+### Prologue Comments
+
+- [ ] Include for each file
+  - [ ] Function, class, module name
+  - [ ] Brief description
+  - [ ] Inputs and outputs
+  - [ ] External sources with attribution
+  - [ ] Author(s) full name(s) and creation date
+
+### In-Code Comments
+
+- [ ] Comment major code blocks and/or individual lines to explain functionality
+- [ ] Indicate whether code is original, sourced, or combined
+- [ ] Ensure clarity for GTA and Project 2 team comprehension
+
+# Source Attribution
+
+- [ ] Clearly identify external code sources and rephrase comments distinctly

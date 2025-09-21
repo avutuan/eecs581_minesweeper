@@ -1,4 +1,12 @@
-# constants.py
+"""
+Name: constants.py
+Description: Constants for the Minesweeper game. Primarily for minimizing magic values.
+Inputs: None
+Outputs: None
+External Sources: N/A
+Author(s): Riley Meyerkorth
+Creation Date: 10 September 2025
+"""
 
 ### VISUALS
 CHAR_MINE = '*'
@@ -11,6 +19,10 @@ ROW_TITLES = 'ABCDEFGHIJ'
 DEFAULT_ROWS = 10
 DEFAULT_COLS = 10
 DEFAULT_MINE_COUNT = 10
+
+### GAME_DATA
+CELL_MINE = -1
+CELL_BLANK = 0
 
 ### INPUT
 KEY_QUIT = 'q'

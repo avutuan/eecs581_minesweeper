@@ -1,3 +1,13 @@
+<!--
+  Name: App.svelte
+  Description: Main web application component for the Minesweeper game.
+  Inputs: None
+  Outputs: None
+  External Sources: N/A
+  Author(s): Nicholas Holmes
+  Creation Date: 18 September 2025
+-->
+
 <script>
   import Board from './lib/Board.svelte';
   import { api } from './lib/api.js';
