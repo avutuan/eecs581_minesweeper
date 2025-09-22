@@ -8,7 +8,8 @@ Author(s): Riley Meyerkorth
 Creation Date: 10 September 2025
 """
 
-from .board import Board, BoardPos
+from .board import Board
+from .models import BoardPos
 from .constants import (
     DEFAULT_MINE_COUNT,
     KEY_QUIT,
@@ -24,7 +25,7 @@ class Controller:
         self._board: Board = Board(DEFAULT_MINE_COUNT)
         self._row: int = 0
         self._col: int = 0
-        self._pos: BoardPos = BoardPos(self._row, self._col)
+        self._pos: BoardPos = BoardPos(x=self._row, y=self._col)
         self._running: bool = True
 
     def run(self):
@@ -51,7 +52,7 @@ class Controller:
         first_click = input("Enter your first click (e.g. A5): ")
         self._row = LETTER_TO_ROW[first_click[0].upper()]
         self._col = int(first_click[1:]) - 1
-        self._pos = BoardPos(self._row, self._col)
+        self._pos = BoardPos(x=self._row, y=self._col)
 
         # Place mines and reveal first cell
         self._board.place_mines(self._pos)
@@ -70,7 +71,7 @@ class Controller:
             return False
         row = LETTER_TO_ROW[click[0].upper()]
         col = int(click[1:]) - 1
-        pos = BoardPos(row, col)
+        pos = BoardPos(x=row, y=col)
         if not self._board.reveal_cell(pos):
             self._board.print_board(show_mines=True)
             print("Game Over! You hit a mine.")

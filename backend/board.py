@@ -8,35 +8,21 @@ Author(s): Aiden Burke, Riley Meyerkorth
 Creation Date: 1 September 2025
 """
 
-from backend.server.models import BoardStateModel
+from .models import (
+    BoardStateModel,
+    BoardSize,
+    BoardPos
+)
 from .constants import (
     CELL_BLANK,
     CELL_MINE,
-    CHAR_FLAG,
     CHAR_MINE,
     CHAR_UNREVEALED,
     DEFAULT_COLS,
     DEFAULT_ROWS,
     ROW_TITLES,
+    DIRECTIONS
 )
-from .directions import DIRECTIONS
-from dataclasses import dataclass
-
-@dataclass
-class BoardPos:
-    """
-    A dataclass to represent a position on the board with x (row) and y (column) coordinates.
-    """
-    x: int
-    y: int
-
-@dataclass
-class BoardSize:
-    """
-    A dataclass to represent the size of the board with rows and columns.
-    """
-    rows: int
-    cols: int
 
 class Board:
     '''
@@ -99,7 +85,7 @@ class Board:
                 # Count adjacent mines
                 count = 0
                 for dr, dc in DIRECTIONS:
-                    nPos = BoardPos(r + dr, c + dc)
+                    nPos = BoardPos(x=r + dr, y=c + dc)
 
                     # Check bounds and if it's a mine
                     if 0 <= nPos.x < rows and 0 <= nPos.y < cols and self.board[nPos.x][nPos.y] == CELL_MINE:
@@ -152,7 +138,7 @@ class Board:
         # IMPORTANT: Do not reveal mines during flood fill.
         if self.board[row][col] == CELL_BLANK:
             for dr, dc in DIRECTIONS:
-                nPos = BoardPos(row + dr, col + dc)
+                nPos = BoardPos(x=row + dr, y=col + dc)
                 if 0 <= nPos.x < rows and 0 <= nPos.y < cols and not self.revealed[nPos.x][nPos.y]:
                     # Skip revealing mines during expansion
                     if self.board[nPos.x][nPos.y] != CELL_MINE:

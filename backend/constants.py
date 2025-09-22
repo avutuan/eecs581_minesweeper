@@ -8,6 +8,20 @@ Author(s): Riley Meyerkorth
 Creation Date: 10 September 2025
 """
 
+### API
+API_HOST = "0.0.0.0"
+API_PORT = 8000
+API_PREFIX = "/api"
+
+class APIRoutes:
+    """
+    Defines API route constants.
+    """
+    API_ROUTE_NEW_GAME = f"{API_PREFIX}/new"
+    API_ROUTE_STATE = f"{API_PREFIX}/state"
+    API_ROUTE_CLICK = f"{API_PREFIX}/click"
+    API_ROUTE_FLAG = f"{API_PREFIX}/flag"
+
 ### VISUALS
 CHAR_MINE = '*'
 CHAR_FLAG = 'F'
@@ -27,7 +41,23 @@ CELL_BLANK = 0
 ### INPUT
 KEY_QUIT = 'q'
 
-### SERVER_CONFIG
-
 ### UTILS
 LETTER_TO_ROW = {chr(i + ord('A')): i for i in range(DEFAULT_ROWS)}
+
+class Direction:
+    """
+    Enum-like class to represent possible movement directions.
+    """
+    UP = (-1, 0)
+    DOWN = (1, 0)
+    LEFT = (0, -1)
+    RIGHT = (0, 1)
+    UP_LEFT = (-1, -1)
+    UP_RIGHT = (-1, 1)
+    DOWN_LEFT = (1, -1)
+    DOWN_RIGHT = (1, 1)
+
+"""
+An array of all possible directions to check adjacent cells.
+"""
+DIRECTIONS = [Direction.UP_LEFT, Direction.UP, Direction.UP_RIGHT, Direction.LEFT, Direction.RIGHT, Direction.DOWN_LEFT, Direction.DOWN, Direction.DOWN_RIGHT]

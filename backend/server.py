@@ -13,18 +13,21 @@ from typing import Optional
 from fastapi import FastAPI, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.server.models import (
-    BoardFrontendModel, BoardFrontendModel, Click, NewGameParams
+from .models import (
+    BoardFrontendModel,
+    BoardPos,
+    NewGameParams,
+    BoardSize
 )
 
-from ..server.constants import (
+from .constants import (
     API_HOST,
     API_PORT,
     APIRoutes
 )
 
-from ..board import (
-    Board, BoardPos, BoardSize
+from .board import (
+    Board
 )
 
 class Server:
@@ -78,7 +81,7 @@ class Server:
             )
 
         @router.post(APIRoutes.API_ROUTE_CLICK)
-        def click(c: Click):
+        def click(c: BoardPos):
             if self.board is None:
                 return BoardFrontendModel(ok=False, error="No board available to click")
             if not self.alive:
@@ -91,11 +94,11 @@ class Server:
 
             # First click: place mines around it and compute counts
             if not self.initialized:
-                self.board.place_mines(BoardPos(c.row, c.col))
+                self.board.place_mines(BoardPos(x=c.x, y=c.y))
                 self.board.update_mine_counts()
                 self.initialized = True
 
-            self.alive = self.board.reveal_cell(BoardPos(c.row, c.col))
+            self.alive = self.board.reveal_cell(BoardPos(x=c.x, y=c.y))
             win = self.board.check_win()
 
             return BoardFrontendModel(
@@ -106,7 +109,7 @@ class Server:
             )
 
         @router.post(APIRoutes.API_ROUTE_FLAG)
-        def toggle_flag(c: Click):
+        def toggle_flag(c: BoardPos):
             if self.board is None:
                 return BoardFrontendModel(ok=False, error="No board available to flag")
             if not self.alive:
@@ -118,7 +121,7 @@ class Server:
                 )
 
             # Toggle flag at the specified position
-            self.board.flag_cell(BoardPos(c.row, c.col))
+            self.board.flag_cell(BoardPos(x=c.x, y=c.y))
 
             return BoardFrontendModel(
                 ok=True,
