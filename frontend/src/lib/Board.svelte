@@ -1,3 +1,13 @@
+<!--
+  Name: Board.svelte
+  Description: The board component for the Minesweeper game.
+  Inputs: None
+  Outputs: None
+  External Sources: N/A
+  Author(s): Nicholas Holmes
+  Creation Date: 18 September 2025
+-->
+
 <script>
   import { createEventDispatcher } from 'svelte';
   export let state; // { rows, cols, board, flags, alive, win, ... }
@@ -10,7 +20,7 @@
     dispatch('cellFlag', { row:r, col:c });
   }
 
-  function cellContent(val, flagged){
+  function cellContent(val, flagged) {
     if (flagged) return '🚩';
     if (val === null) return '';
     if (val === -1) return '💣';

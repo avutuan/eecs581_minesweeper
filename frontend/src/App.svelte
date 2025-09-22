@@ -1,3 +1,13 @@
+<!--
+  Name: App.svelte
+  Description: Main web application component for the Minesweeper game.
+  Inputs: None
+  Outputs: None
+  External Sources: N/A
+  Author(s): Nicholas Holmes
+  Creation Date: 18 September 2025
+-->
+
 <script>
   import Board from './lib/Board.svelte';
   import { api } from './lib/api.js';
@@ -54,7 +64,8 @@
   async function onCellClick(e) {
     const { row, col } = e.detail;
     const res = await api.click({ row, col });
-    state = res.state;
+    const refresh = await api.state(); // NEW: get updated state AFTER click
+    state = refresh.state;
   }
   async function onCellFlag(e) {
     const { row, col } = e.detail;
