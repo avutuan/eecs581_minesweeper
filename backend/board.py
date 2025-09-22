@@ -8,6 +8,7 @@ Author(s): Aiden Burke, Riley Meyerkorth
 Creation Date: 1 September 2025
 """
 
+from backend.server.models import BoardStateModel
 from .constants import (
     CELL_BLANK,
     CELL_MINE,
@@ -56,7 +57,7 @@ class Board:
         self.revealed: list[list[bool]] = [[False for _ in range(self.size.cols)] for _ in range(self.size.rows)]
         # flags are tracked separately from board values
         self.flags: list[list[bool]] = [[False for _ in range(self.size.cols)] for _ in range(self.size.rows)]
-        self.numOfFlags: int = 0
+        self.flag_count: int = 0
         self.isAlive: bool = True
 
     def place_mines(self, first_pos: BoardPos) -> None:
@@ -118,7 +119,7 @@ class Board:
             return
         # Toggle flag state without modifying underlying board values
         self.flags[row][col] = not self.flags[row][col]
-        self.numOfFlags += 1 if self.flags[row][col] else -1
+        self.flag_count += 1 if self.flags[row][col] else -1
 
     def reveal_cell(self, pos: BoardPos) -> bool:
         """
@@ -214,7 +215,7 @@ class Board:
         for r in range(self.size.rows): # number of rows
             self._print_row(r, show_mines)
 
-    def to_dict(self, reveal_all: bool = False) -> dict[str, any]:
+    def to_dict(self, reveal_all: bool = False) -> BoardStateModel:
         """
         Convert board state to dictionary format expected by frontend
         """
@@ -234,14 +235,14 @@ class Board:
                 flags[r][c] = self.flags[r][c]
         
         # Return the board state as a dictionary
-        return {
-            'rows': rows,
-            'cols': cols, 
-            'mines': self.mines,
-            'board': board,
-            'revealed': [row[:] for row in self.revealed],
-            'flags': flags,
-            'numOfFlags': self.numOfFlags,
-            'alive': self.isAlive,
-            'win': self.check_win()
-        }
+        return BoardStateModel(
+            rows=rows,
+            cols=cols,
+            mines=self.mines,
+            board=board,
+            revealed=[row[:] for row in self.revealed],
+            flags=flags,
+            flag_count=self.flag_count,
+            alive=self.isAlive,
+            win=self.check_win()
+        )

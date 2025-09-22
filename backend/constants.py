@@ -27,5 +27,7 @@ CELL_BLANK = 0
 ### INPUT
 KEY_QUIT = 'q'
 
+### SERVER_CONFIG
+
 ### UTILS
 LETTER_TO_ROW = {chr(i + ord('A')): i for i in range(DEFAULT_ROWS)}
