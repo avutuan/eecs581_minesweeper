@@ -79,10 +79,10 @@ These are the project requirements in a checkbox format from the Canvas turn-in 
 
 ### System Architecture Overview
 
-- [ ] High-level description of components
-- [ ] High-level diagrams of components
+- [x] High-level description of components
+- [x] High-level diagrams of components
 - [x] High-level diagram of dataflow
-- [ ] High-level diagrams of key data structures 
+- [x] High-level diagrams of key data structures 
 
 ## Code Documentation and Comments
 

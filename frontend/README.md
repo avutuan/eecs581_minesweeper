@@ -43,6 +43,14 @@ npm install
 
 #### 3
 
+Ensure that you have created a `.env` file in the `frontend` directory with the following within:
+
+```env
+VITE_API_MODE=http
+```
+
+#### 4
+
 Start the dev server:
 
 ```bash
@@ -51,11 +59,6 @@ npm run dev
 
 Vite will print a local URL (for example `http://localhost:5173` or `5174`).
 
-#### 4
+#### 5
 
 Open the printed local URL in your browser.
-
-## Notes
-
-- The app runs fully in demo mode (no backend required).
-- If you later want to use the Python backend, start it separately and update the frontend to use HTTP mode (set `VITE_API_MODE=http`).

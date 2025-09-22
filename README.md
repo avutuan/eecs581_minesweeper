@@ -13,12 +13,17 @@ This is the first project for EECS 581 - Software Engineering 2 at the Universit
 
 ## Root Structure
 
+- `.gitignore` - ignores Node, Python, editor artifacts, etc.
+- `.vscode` - Visual Studio Code specific environment setup things. Primarily for convenience.
 - `backend` - The directory that stores the backend ([docs](backend/README.md))
 - `frontend` - The directory that stores the frontend ([docs](frontend/README.md))
-- `board.py` - Python board logic (mines placement, reveal, win check)
 - `REQUIREMENTS.txt` - Python dependencies (FastAPI backend optional)
 - `README.md` - this file
-- `.gitignore` - ignores Node, Python, editor artifacts, etc.
+- `TODO.md` - a basic todo list for us to keep track of things to do
+- `test_minesweeper.py` - file for running tests
+
+## Setup/Running/Building
+The backend and frontend must both be running. Setup instructions for both can be found in their respective repositories.
 
 ## Testing
 To run test cases, run the following command in the root directory:

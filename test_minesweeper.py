@@ -1,15 +1,14 @@
 # test_minesweeper.py
 from backend.board import Board, BoardPos
-from backend.constants import DEFAULT_ROWS, DEFAULT_COLS, DEFAULT_MINE_COUNT, CHAR_MINE, CHAR_UNREVEALED
-from backend.directions import DIRECTIONS
-
+from backend.constants import DEFAULT_ROWS, DEFAULT_COLS
+from backend.models import BoardSize, BoardStateModel
 
 class TestBoardCreation:
     # test that board.__init__ creates a board with the correct properties
     def test_board_initialization(self):
         board = Board(10)
         assert board.mines == 10
-        assert board.size == (DEFAULT_ROWS, DEFAULT_COLS)
+        assert board.size == BoardSize(DEFAULT_ROWS, DEFAULT_COLS)
         assert len(board.board) == DEFAULT_ROWS
         assert len(board.board[0]) == DEFAULT_COLS
         assert len(board.revealed) == DEFAULT_ROWS
@@ -32,7 +31,7 @@ class TestBoardCreation:
 class TestBoardPos:
     def test_board_pos_creation(self):
         # test that boardpos stores x and y coordinates
-        pos = BoardPos(3, 7)
+        pos = BoardPos(x=3, y=7)
         assert pos.x == 3
         assert pos.y == 7
 
@@ -40,7 +39,7 @@ class TestPlaceMines:
     def test_place_mines_puts_correct_count(self):
         # test that place_mines places the right number of mines
         board = Board(5)
-        first_click = BoardPos(5, 5)
+        first_click = BoardPos(x=5, y=5)
         board.place_mines(first_click)
         
         mine_count = 0
@@ -54,7 +53,7 @@ class TestPlaceMines:
     def test_first_click_area_is_safe(self):
         # test that the 3x3 area around first click has no mines
         board = Board(20)  # lots of mines to make test meaningful
-        first_click = BoardPos(4, 4)
+        first_click = BoardPos(x=4, y=4)
         board.place_mines(first_click)
         
         # check the 3x3 area around first click
@@ -85,7 +84,7 @@ class TestRevealCell:
     def test_reveal_non_mine_returns_true(self):
         # test that revealing a non-mine cell returns true
         board = Board(0)  # no mines
-        pos = BoardPos(2, 3)
+        pos = BoardPos(x=2, y=3)
         
         result = board.reveal_cell(pos)
         assert result == True
@@ -95,7 +94,7 @@ class TestRevealCell:
         # test that revealing a mine returns false
         board = Board(0)
         board.board[2][2] = -1  # place a mine
-        pos = BoardPos(2, 2)
+        pos = BoardPos(x=2, y=2)
         
         result = board.reveal_cell(pos)
         assert result == False
@@ -104,7 +103,7 @@ class TestRevealCell:
     def test_reveal_already_revealed_returns_true(self):
         # test that revealing an already revealed cell returns true
         board = Board(0)
-        pos = BoardPos(1, 1)
+        pos = BoardPos(x=1, y=1)
         
         # reveal once
         board.reveal_cell(pos)
@@ -173,17 +172,17 @@ def run_simple_tests():
     
     # test board creation
     board = Board(5)
-    assert board.size == (DEFAULT_ROWS, DEFAULT_COLS), "Board should be correct size"
+    assert board.size == BoardSize(DEFAULT_ROWS, DEFAULT_COLS), "Board should be correct size"
     assert board.mines == 5, "Board should have 5 mines"
     print("✓ Board creation test passed")
     
     # test boardpos
-    pos = BoardPos(3, 7)
+    pos = BoardPos(x=3, y=7)
     assert pos.x == 3 and pos.y == 7, "BoardPos should store coordinates"
     print("✓ BoardPos test passed")
     
     # test mine placement
-    board.place_mines(BoardPos(5, 5))
+    board.place_mines(BoardPos(x=5, y=5))
     mine_count = sum(1 for row in board.board for cell in row if cell == -1)
     assert mine_count == 5, "Should have exactly 5 mines"
     print("✓ Mine placement test passed")
@@ -193,7 +192,7 @@ def run_simple_tests():
     print("✓ Mine count calculation test passed")
     
     # test cell reveal
-    result = board.reveal_cell(BoardPos(0, 0))
+    result = board.reveal_cell(BoardPos(x=0, y=0))
     assert result == True, "Revealing non-mine should return True"
     print("✓ Cell reveal test passed")
     
@@ -203,7 +202,7 @@ def run_simple_tests():
     
     # test to_dict
     result_dict = board.to_dict()
-    assert 'board' in result_dict, "to_dict should return board data"
+    assert isinstance(result_dict, BoardStateModel), "to_dict should return BoardStateModel"
     print("✓ to_dict test passed")
     
     print("All tests passed")
