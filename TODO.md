@@ -70,37 +70,37 @@ These are the project requirements in a checkbox format from the Canvas turn-in 
 
 ### Person-Hours Estimate
 
-- [ ] Detail methodology for estimated hours
+- [x] Detail methodology for estimated hours
 
 ### Actual Person-Hours
 
-- [ ] Day-by-day accounting for each member's hours (excluding lectures)
-- [ ] Submit Excel spreadsheet PDF of hours
+- [x] Day-by-day accounting for each member's hours (excluding lectures)
+- [x] Submit Excel spreadsheet PDF of hours
 
 ### System Architecture Overview
 
 - [ ] High-level description of components
 - [ ] High-level diagrams of components
-- [ ] High-level diagram of dataflow
+- [x] High-level diagram of dataflow
 - [ ] High-level diagrams of key data structures 
 
 ## Code Documentation and Comments
 
 ### Prologue Comments
 
-- [ ] Include for each file
-  - [ ] Function, class, module name
-  - [ ] Brief description
-  - [ ] Inputs and outputs
-  - [ ] External sources with attribution
-  - [ ] Author(s) full name(s) and creation date
+- [x] Include for each file
+  - [x] Function, class, module name
+  - [x] Brief description
+  - [x] Inputs and outputs
+  - [x] External sources with attribution
+  - [x] Author(s) full name(s) and creation date
 
 ### In-Code Comments
 
-- [ ] Comment major code blocks and/or individual lines to explain functionality
-- [ ] Indicate whether code is original, sourced, or combined
-- [ ] Ensure clarity for GTA and Project 2 team comprehension
+- [x] Comment major code blocks and/or individual lines to explain functionality
+- [x] Indicate whether code is original, sourced, or combined
+- [x] Ensure clarity for GTA and Project 2 team comprehension
 
 # Source Attribution
 
-- [ ] Clearly identify external code sources and rephrase comments distinctly
+- [x] Clearly identify external code sources and rephrase comments distinctly
