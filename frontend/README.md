@@ -61,4 +61,4 @@ Vite will print a local URL (for example `http://localhost:5173` or `5174`).
 
 #### 5
 
-Open the printed local URL in your browser.
+Open the printed local URL from the console in your browser.

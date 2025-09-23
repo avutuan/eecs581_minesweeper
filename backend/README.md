@@ -33,4 +33,3 @@ python -m backend.server
 ```
 
 The server will now be running.
-

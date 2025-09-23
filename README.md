@@ -23,9 +23,11 @@ This is the first project for EECS 581 - Software Engineering 2 at the Universit
 - `test_minesweeper.py` - file for running tests
 
 ## Setup/Running/Building
+
 The backend and frontend must both be running. Setup instructions for both can be found in their respective repositories.
 
 ## Testing
+
 To run test cases, run the following command in the root directory:
 
 ```bash
