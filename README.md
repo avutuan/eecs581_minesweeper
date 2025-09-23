@@ -24,7 +24,7 @@ This is the first project for EECS 581 - Software Engineering 2 at the Universit
 
 ## Setup/Running/Building
 
-The backend and frontend must both be running. Setup instructions for both can be found in their respective repositories.
+The backend and frontend must both be running. Setup instructions for both can be found in their respective directories.
 
 ## Testing
 
