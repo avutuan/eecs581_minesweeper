@@ -14,11 +14,7 @@
 
 ### 1
 
-Ensure that you are within the root repo directory. If you opened the repo in an IDE from the root, run the following command in the terminal:
-
-```bash
-cd backend
-```
+Ensure that you are within the root repo directory.
 
 ### 2
 
