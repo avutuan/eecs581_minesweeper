@@ -26,6 +26,19 @@
     if (val === -1) return '💣';
     return val === 0 ? '' : String(val);
   }
+
+  function cellColor(val) {
+    switch (val) {
+      case 1: return "text-blue-600";
+      case 2: return "text-green-600";
+      case 3: return "text-red-600";
+      case 4: return "text-purple-600";
+      case 5: return "text-yellow-600";
+      case 6: return "text-teal-600";
+      case 7: return "text-black";
+      case 8: return "text-gray-600";
+      default: return ""; // blank or mines/flags
+    }}
 </script>
 
 <div class="grid" style={`grid-template-columns: repeat(${state.cols}, minmax(0, 1fr)); gap: .5rem;`}>
@@ -33,15 +46,20 @@
     {#each Array(state.cols) as __, c}
       {#key (r+'-'+c)}
         <button
-          class={`aspect-square rounded-xl border ${state?.revealed[r][c] ? "bg-slate-150 dark:bg-slate-900" : "bg-slate-100 dark:bg-slate-800"} hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-70 flex items-center justify-center`}
+          class={`aspect-square rounded-xl border ${state?.revealed[r][c]
+          ? "bg-slate-150 dark:bg-slate-900"  // revealed cells
+          : "bg-slate-100 dark:bg-slate-800"} // not revealed cells
+          hover:bg-slate-200 dark:hover:bg-slate-700 
+          disabled:opacity-70 
+          flex items-center justify-center`}
           on:click={() => cellClick(r,c)}
           on:contextmenu={(e) => cellFlag(e, r, c)}
           disabled={!state.alive || state.win}
           aria-label={`cell ${r},${c}`}
         >
-          <span class="font-semibold text-2xl md:text-3xl leading-none">
+          <span class={`font-semibold text-2xl md:text-3xl leading-none ${cellColor(state.board[r][c])}`}>
             {cellContent(state.board[r][c], state.flags[r][c])}
-          </span>
+          </span> 
         </button>
         {console.log(state)}
       {/key}
