@@ -4,7 +4,7 @@
   Inputs: None
   Outputs: None
   External Sources: N/A
-  Author(s): Nicholas Holmes
+  Author(s): Nicholas Holmes + AI Solver Integration
   Creation Date: 18 September 2025
 -->
 
@@ -15,12 +15,16 @@
   let state = null;
   let status = 'idle';
   let error = '';
-  let rows = 10, cols = 10, mines = 10;   // easy defaults; UI allows changing
+  let rows = 10, cols = 10, mines = 10;
   let overlayDismissed = false;
 
-  // timer (seconds)
+  // timer
   let timerSeconds = 0;
   let timerId = null;
+
+  // AI solver
+  let solving = false;
+  let solvingDifficulty = null;
 
   function formatTime(s){
     const m = Math.floor(s/60).toString().padStart(2,'0');
@@ -54,7 +58,8 @@
       state = res.state;
       status = 'ready';
       overlayDismissed = false;
-      // reset timer and start
+      solving = false;
+      solvingDifficulty = null;
       stopTimer();
       timerSeconds = 0;
       startTimer();
@@ -64,7 +69,7 @@
   async function onCellClick(e) {
     const { row, col } = e.detail;
     const res = await api.click({ row, col });
-    const refresh = await api.state(); // get updated state AFTER click
+    const refresh = await api.state();
     state = refresh.state;
   }
   async function onCellFlag(e) {
@@ -74,26 +79,48 @@
   }
 
   async function aiAction(difficulty) {
-    status = 'loading'; error = '';
     try {
       const res = await api.aiMove(difficulty);
-      if (res.error) {
-        error = res.error;
-        status = 'error';
-        return;
-      }
+      if (res.error) { error = res.error; return null; }
       state = res.state;
-      status = 'ready';
+      return res;
     } catch (e) {
       error = e?.message ?? 'AI failed';
-      status = 'error';
+      return null;
     }
   }
+
+  // Continuous solver
+  async function aiSolve(difficulty){
+    if (!state || !state.alive || state.win) return;
+    solving = true;
+    solvingDifficulty = difficulty;
+
+    async function step(){
+      if (!solving) return;
+      if (!state.alive || state.win) { solving = false; solvingDifficulty = null; return; }
+
+      const res = await aiAction(difficulty);
+
+      // FIX: If AI has no moves ("none"), try random easy reveal to keep progressing
+      if (!res || res.action === "none") {
+        const fallback = await aiAction("easy");
+        if (!fallback || fallback.action === "none") {
+          solving = false; solvingDifficulty = null; return;
+        }
+      }
+
+      setTimeout(step, 300); // delay between moves
+    }
+    step();
+  }
+
+  function stopSolve(){ solving = false; solvingDifficulty = null; }
 
   function dismissOverlay(){ overlayDismissed = true; }
 
   // stop timer when game ends
-  $: if (state && (!state.alive || state.win)) { stopTimer(); }
+  $: if (state && (!state.alive || state.win)) { stopTimer(); solving = false; solvingDifficulty = null; }
 
   function toggleTheme(){
     const el = document.documentElement;
@@ -148,12 +175,27 @@
 
         <!-- AI Controls -->
         <div class="flex flex-wrap gap-2 mt-2">
+          <!-- Single-step AI -->
           <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
-                  on:click={() => aiAction('easy')}>AI Easy</button>
+                  on:click={() => aiAction('easy')}>AI Easy (1 step)</button>
           <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
-                  on:click={() => aiAction('medium')}>AI Medium</button>
+                  on:click={() => aiAction('medium')}>AI Medium (1 step)</button>
           <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
-                  on:click={() => aiAction('hard')}>AI Hard</button>
+                  on:click={() => aiAction('hard')}>AI Hard (1 step)</button>
+
+          <!-- Continuous AI Solve -->
+          <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
+                  on:click={() => aiSolve('easy')}>AI Solve (Easy)</button>
+          <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
+                  on:click={() => aiSolve('medium')}>AI Solve (Medium)</button>
+          <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
+                  on:click={() => aiSolve('hard')}>AI Solve (Hard)</button>
+
+          {#if solving}
+            <button class="px-3 py-2 rounded-xl border bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800"
+                    on:click={stopSolve}>Stop</button>
+            <span class="text-xs text-slate-500">Solving: {solvingDifficulty}</span>
+          {/if}
         </div>
       </div>
 
