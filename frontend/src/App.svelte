@@ -17,6 +17,11 @@
   let error = '';
   let rows = 10, cols = 10, mines = 10;   // easy defaults; UI allows changing
   let overlayDismissed = false;
+  
+  // Validation constants
+  const MIN_ROWS = 10, MAX_ROWS = 20;
+  const MIN_COLS = 10, MAX_COLS = 20;
+  const MIN_MINES = 10, MAX_MINES = 20;
 
   // timer (seconds)
   let timerSeconds = 0;
@@ -48,9 +53,39 @@
   }
 
   async function newGame() {
+    // Validate inputs before sending to server
+    if (rows < MIN_ROWS || rows > MAX_ROWS) {
+      error = `Rows must be between ${MIN_ROWS} and ${MAX_ROWS}`;
+      status = 'error';
+      return;
+    }
+    if (cols < MIN_COLS || cols > MAX_COLS) {
+      error = `Columns must be between ${MIN_COLS} and ${MAX_COLS}`;
+      status = 'error';
+      return;
+    }
+    if (mines < MIN_MINES || mines > MAX_MINES) {
+      error = `Mines must be between ${MIN_MINES} and ${MAX_MINES}`;
+      status = 'error';
+      return;
+    }
+    
+    const totalCells = rows * cols;
+    const maxAllowedMines = Math.min(MAX_MINES, totalCells - 1);
+    if (mines > maxAllowedMines) {
+      error = `Too many mines for board size. Maximum allowed: ${maxAllowedMines}`;
+      status = 'error';
+      return;
+    }
+    
     status = 'loading'; error = '';
     try {
       const res = await api.newGame({ rows, cols, mines });
+      if (!res.ok) {
+        error = res.error || 'Failed to create new game';
+        status = 'error';
+        return;
+      }
       state = res.state;
       status = 'ready';
       overlayDismissed = false;
@@ -63,14 +98,40 @@
 
   async function onCellClick(e) {
     const { row, col } = e.detail;
-    const res = await api.click({ row, col });
-    const refresh = await api.state(); // NEW: get updated state AFTER click
-    state = refresh.state;
+    try {
+      const res = await api.click({ row, col });
+      // Use the state from the response first, then refresh for consistency
+      if (res.state) {
+        state = res.state;
+      } else {
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+    } catch (error) {
+      console.error('Error during cell click:', error);
+      // Refresh state on error to ensure consistency
+      const refresh = await api.state();
+      state = refresh.state;
+    }
   }
+  
   async function onCellFlag(e) {
     const { row, col } = e.detail;
-    const res = await api.toggleFlag({ row, col });
-    state = res.state;
+    try {
+      const res = await api.toggleFlag({ row, col });
+      // Use the state from the response, with fallback refresh
+      if (res.state) {
+        state = res.state;
+      } else {
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+    } catch (error) {
+      console.error('Error during flag toggle:', error);
+      // Refresh state on error to ensure consistency
+      const refresh = await api.state();
+      state = refresh.state;
+    }
   }
 
   function dismissOverlay(){ overlayDismissed = true; }
@@ -86,6 +147,9 @@
 
   $: flagsCount = state?.flags?.flat().filter(Boolean).length ?? 0;
   $: minesLeft = (state?.mines ?? mines) - flagsCount;
+  $: currentRows = state?.rows ?? rows;
+  $: currentCols = state?.cols ?? cols;
+  $: currentMines = state?.mines ?? mines;
 
   newGame(); // start immediately
 </script>
@@ -108,19 +172,19 @@
         <div class="grid grid-cols-3 gap-2">
           <label class="text-sm">Rows
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" bind:value={rows}/>
+                   type="number" min={MIN_ROWS} max={MAX_ROWS} bind:value={rows}/>
           </label>
           <label class="text-sm">Cols
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" bind:value={cols}/>
+                   type="number" min={MIN_COLS} max={MAX_COLS} bind:value={cols}/>
           </label>
           <label class="text-sm">Mines
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="1" max="300" bind:value={mines}/>
+                   type="number" min={MIN_MINES} max={MAX_MINES} bind:value={mines}/>
           </label>
         </div>
         <div class="text-xs text-slate-500 dark:text-slate-400">
-          Max values — Rows: 30, Cols: 30, Mines: 300
+          Rows: {MIN_ROWS}-{MAX_ROWS}, Cols: {MIN_COLS}-{MAX_COLS}, Mines: {MIN_MINES}-{MAX_MINES}
         </div>
         <div class="flex gap-2">
           <button class="px-3 py-2 rounded-xl border bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700"
@@ -142,7 +206,8 @@
             <div>Flags: <span class="font-semibold">{flagsCount}</span></div>
             <div>Alive: <span class="font-semibold">{state.alive ? 'Yes' : 'No'}</span></div>
             <div>Win: <span class="font-semibold">{state.win ? 'Yes' : 'No'}</span></div>
-            <div>Grid: {state.rows}×{state.cols}</div>
+            <div>Grid: <span class="font-semibold">{currentRows}×{currentCols}</span></div>
+            <div>Total mines: <span class="font-semibold">{currentMines}</span></div>
           </div>
         {/if}
       </div>

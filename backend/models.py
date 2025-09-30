@@ -1,10 +1,16 @@
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field, ValidationError
 
 from .constants import (
     DEFAULT_COLS,
     DEFAULT_MINE_COUNT,
-    DEFAULT_ROWS
+    DEFAULT_ROWS,
+    MIN_ROWS,
+    MAX_ROWS,
+    MIN_COLS,
+    MAX_COLS,
+    MIN_MINES,
+    MAX_MINES
 )
 
 from dataclasses import dataclass
@@ -58,6 +64,14 @@ class BoardFrontendModel(BaseModel):
         return getattr(self, key)
 
 class NewGameParams(BaseModel):
-    rows: int = DEFAULT_ROWS
-    cols: int = DEFAULT_COLS
-    mines: int = DEFAULT_MINE_COUNT
+    rows: int = Field(default=DEFAULT_ROWS, ge=MIN_ROWS, le=MAX_ROWS)
+    cols: int = Field(default=DEFAULT_COLS, ge=MIN_COLS, le=MAX_COLS)
+    mines: int = Field(default=DEFAULT_MINE_COUNT, ge=MIN_MINES, le=MAX_MINES)
+    
+    @model_validator(mode='after')
+    def validate_mines_vs_cells(self):
+        total_cells = self.rows * self.cols
+        max_allowed_mines = min(MAX_MINES, total_cells - 1)  # Leave at least one safe cell
+        if self.mines > max_allowed_mines:
+            raise ValueError(f"Too many mines for board size. Maximum allowed: {max_allowed_mines}")
+        return self
