@@ -25,8 +25,6 @@ from .constants import (
 )
 import random
 
-
-
 class Board:
     '''
     General Idea:
@@ -70,7 +68,7 @@ class Board:
     def ai_move_easy(self) -> tuple[str, BoardPos]:
         """Pick any hidden cell at random."""
         hidden = [
-            BoardPos(r, c)
+            BoardPos(x=r, y=c)
             for r in range(self.size.rows)
             for c in range(self.size.cols)
             if not self.revealed[r][c] and not self.flags[r][c]
