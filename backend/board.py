@@ -23,6 +23,9 @@ from .constants import (
     ROW_TITLES,
     DIRECTIONS
 )
+import random
+
+
 
 class Board:
     '''
@@ -45,6 +48,87 @@ class Board:
         self.flags: list[list[bool]] = [[False for _ in range(self.size.cols)] for _ in range(self.size.rows)]
         self.flag_count: int = 0
         self.isAlive: bool = True
+        
+    def _hidden_neighbors(self, pos: BoardPos) -> list[BoardPos]:
+        rows, cols = self.size.rows, self.size.cols
+        neighbors = []
+        for dr, dc in DIRECTIONS:
+            r, c = pos.x + dr, pos.y + dc
+            if 0 <= r < rows and 0 <= c < cols and not self.revealed[r][c] and not self.flags[r][c]:
+                neighbors.append(BoardPos(x=r, y=c))
+        return neighbors
+
+    def _flagged_neighbors(self, pos: BoardPos) -> list[BoardPos]:
+        rows, cols = self.size.rows, self.size.cols
+        neighbors = []
+        for dr, dc in DIRECTIONS:
+            r, c = pos.x + dr, pos.y + dc
+            if 0 <= r < rows and 0 <= c < cols and self.flags[r][c]:
+                neighbors.append(BoardPos(x=r, y=c))
+        return neighbors
+
+    def ai_move_easy(self) -> tuple[str, BoardPos]:
+        """Pick any hidden cell at random."""
+        hidden = [
+            BoardPos(r, c)
+            for r in range(self.size.rows)
+            for c in range(self.size.cols)
+            if not self.revealed[r][c] and not self.flags[r][c]
+        ]
+        if not hidden:
+            return ("none", None)
+        return ("reveal", random.choice(hidden))
+
+    def ai_move_medium(self) -> tuple[str, BoardPos]:
+        """Apply flag/reveal neighbor rules, else random."""
+        for r in range(self.size.rows):
+            for c in range(self.size.cols):
+                if not self.revealed[r][c]:
+                    continue
+                value = self.board[r][c]
+                if value in (CELL_BLANK, CELL_MINE):
+                    continue
+
+                hidden = self._hidden_neighbors(BoardPos(x=r, y=c))
+                flagged = self._flagged_neighbors(BoardPos(x=r, y=c))
+
+                # Rule 1: all hidden neighbors are mines
+                if len(hidden) > 0 and len(hidden) == value - len(flagged):
+                    return ("flag", hidden[0])
+
+                # Rule 2: all other hidden neighbors are safe
+                if len(flagged) == value and len(hidden) > 0:
+                    return ("reveal", hidden[0])
+
+        # Fallback: random
+        return self.ai_move_easy()
+
+    def ai_move_hard(self) -> tuple[str, BoardPos]:
+        """Apply medium + 1-2-1 pattern rule."""
+        # Check rows for 1-2-1 patterns
+        for r in range(self.size.rows):
+            for c in range(self.size.cols - 2):
+                if (
+                    self.revealed[r][c]
+                    and self.revealed[r][c + 1]
+                    and self.revealed[r][c + 2]
+                    and self.board[r][c] == 1
+                    and self.board[r][c + 1] == 2
+                    and self.board[r][c + 2] == 1
+                ):
+                    # Deduce: outer neighbors are mines, middle safe
+                    # Return one of those moves
+                    hidden_left = self._hidden_neighbors(BoardPos(r, c))
+                    hidden_mid = self._hidden_neighbors(BoardPos(r, c + 1))
+                    hidden_right = self._hidden_neighbors(BoardPos(r, c + 2))
+                    if hidden_mid:
+                        return ("reveal", hidden_mid[0])
+                    if hidden_left:
+                        return ("flag", hidden_left[0])
+                    if hidden_right:
+                        return ("flag", hidden_right[0])
+        # Fallback to medium
+        return self.ai_move_medium()
 
     def place_mines(self, first_pos: BoardPos) -> None:
         """
@@ -232,3 +316,5 @@ class Board:
             alive=self.isAlive,
             win=self.check_win()
         )
+        
+    

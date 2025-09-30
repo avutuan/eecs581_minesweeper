@@ -64,13 +64,30 @@
   async function onCellClick(e) {
     const { row, col } = e.detail;
     const res = await api.click({ row, col });
-    const refresh = await api.state(); // NEW: get updated state AFTER click
+    const refresh = await api.state(); // get updated state AFTER click
     state = refresh.state;
   }
   async function onCellFlag(e) {
     const { row, col } = e.detail;
     const res = await api.toggleFlag({ row, col });
     state = res.state;
+  }
+
+  async function aiAction(difficulty) {
+    status = 'loading'; error = '';
+    try {
+      const res = await api.aiMove(difficulty);
+      if (res.error) {
+        error = res.error;
+        status = 'error';
+        return;
+      }
+      state = res.state;
+      status = 'ready';
+    } catch (e) {
+      error = e?.message ?? 'AI failed';
+      status = 'error';
+    }
   }
 
   function dismissOverlay(){ overlayDismissed = true; }
@@ -127,6 +144,16 @@
                   on:click={newGame}>Start</button>
           <button class="px-3 py-2 rounded-xl border"
                   on:click={load}>Refresh</button>
+        </div>
+
+        <!-- AI Controls -->
+        <div class="flex flex-wrap gap-2 mt-2">
+          <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
+                  on:click={() => aiAction('easy')}>AI Easy</button>
+          <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
+                  on:click={() => aiAction('medium')}>AI Medium</button>
+          <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
+                  on:click={() => aiAction('hard')}>AI Hard</button>
         </div>
       </div>
 

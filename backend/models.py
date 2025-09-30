@@ -61,3 +61,7 @@ class NewGameParams(BaseModel):
     rows: int = DEFAULT_ROWS
     cols: int = DEFAULT_COLS
     mines: int = DEFAULT_MINE_COUNT
+
+class AIMove(BaseModel):
+    action: str  # "reveal" | "flag" | "none"
+    pos: BoardPos | None
