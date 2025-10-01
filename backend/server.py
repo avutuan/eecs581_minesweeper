@@ -7,6 +7,7 @@ External Sources: N/A
 Author(s): Nicholas Holmes
 Creation Date: 18 September 2025
 """
+import random
 
 from typing import Optional
 
@@ -140,13 +141,32 @@ class Server:
 
         @router.get("/api/ai/{difficulty}")
         def ai_move(difficulty: str):
-            """
-            Perform an AI move for the given difficulty.
-            """
-            if self.board is None:
-                return {"error": "No board"}
-            if not self.alive:
-                return {"error": "Game over"}
+            # If board hasn't been initialized yet (no mines placed / first click),
+            # make a random first click so the AI has a starting point.
+            # This mirrors the normal first-click behavior used in the UI.
+            if not self.initialized:
+                rows = self.board.size.rows
+                cols = self.board.size.cols
+
+                # pick a random hidden cell
+                r = random.randrange(rows)
+                c = random.randrange(cols)
+                first_pos = BoardPos(x=r, y=c)
+
+                # place mines around that first click and compute counts
+                self.board.place_mines(first_pos)
+                self.board.update_mine_counts()
+                self.initialized = True
+
+                # reveal the chosen cell (will not be a mine because place_mines avoids it)
+                self.alive = self.board.reveal_cell(first_pos)
+
+                # return the state after the initial reveal so the frontend can update
+                return {
+                    "action": "reveal",
+                    "pos": first_pos.dict(),
+                    "state": self.board.to_dict(reveal_all=(not self.alive)),
+                }
 
             if difficulty == "easy":
                 action, pos = self.board.ai_move_easy()
