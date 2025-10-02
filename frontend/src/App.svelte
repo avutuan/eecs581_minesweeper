@@ -191,6 +191,10 @@
       const res = await api.click({ row, col });
       if (res.state) {
         state = res.state;
+        // Check if a bomb was just revealed
+        if (state.revealed[row][col] && state.board[row][col] === -1) {
+          soundManager.playBomb();
+        }
       } else {
         const refresh = await api.state();
         state = refresh.state;
@@ -256,6 +260,21 @@
 
   // stop timer when game ends
   $: if (state && (!state.alive || state.win)) { stopTimer(); }
+
+  // Play sounds when game state changes
+  $: if (state) {
+    // Check for win
+    if (state.win && !previousWin) {
+      soundManager.playWin();
+    }
+    // Check for lose
+    if (!state.alive && previousAlive && !state.win) {
+      soundManager.playLose();
+    }
+    // Update previous state
+    previousWin = state.win;
+    previousAlive = state.alive;
+  }
 
   function toggleTheme(){
     /*
