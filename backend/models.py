@@ -1,5 +1,6 @@
 
 from pydantic import BaseModel, model_validator, Field, ValidationError
+from typing import Optional, Union, List
 
 from .constants import (
     DEFAULT_COLS,
@@ -43,9 +44,9 @@ class BoardStateModel(BaseModel):
     rows: int
     cols: int
     mines: int
-    board: list[list[int | None]]
-    revealed: list[list[bool]]
-    flags: list[list[bool]]
+    board: List[List[Optional[int]]]
+    revealed: List[List[bool]]
+    flags: List[List[bool]]
     flag_count: int
     alive: bool
     win: bool
@@ -55,10 +56,10 @@ class BoardStateModel(BaseModel):
 
 class BoardFrontendModel(BaseModel):
     ok: bool
-    alive: bool | None = None
-    win: bool | None = None
-    error: str | None = None
-    state: BoardStateModel | None = None
+    alive: Optional[bool] = None
+    win: Optional[bool] = None
+    error: Optional[str] = None
+    state: Optional[BoardStateModel] = None
 
     def __getitem__(self, key):
         return getattr(self, key)

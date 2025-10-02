@@ -11,12 +11,18 @@
 <script>
   import Board from './lib/Board.svelte';
   import { api } from './lib/api.js';
+  import { soundManager } from './lib/sounds.js';
 
   let state = null;
   let status = 'idle';
   let error = '';
   let rows = 10, cols = 10, mines = 10;   // easy defaults; UI allows changing
   let overlayDismissed = false;
+  let soundEnabled = true;
+  
+  // Track previous game state to detect changes
+  let previousWin = false;
+  let previousAlive = true;
   
   // Validation constants
   const MIN_ROWS = 10, MAX_ROWS = 20;
@@ -89,6 +95,9 @@
       state = res.state;
       status = 'ready';
       overlayDismissed = false;
+      // Reset previous game state trackers
+      previousWin = false;
+      previousAlive = true;
       // reset timer and start
       stopTimer();
       timerSeconds = 0;
@@ -103,6 +112,10 @@
       // Use the state from the response first, then refresh for consistency
       if (res.state) {
         state = res.state;
+        // Check if a bomb was just revealed
+        if (state.revealed[row][col] && state.board[row][col] === -1) {
+          soundManager.playBomb();
+        }
       } else {
         const refresh = await api.state();
         state = refresh.state;
@@ -136,8 +149,27 @@
 
   function dismissOverlay(){ overlayDismissed = true; }
 
+  function toggleSound(){
+    soundEnabled = soundManager.toggle();
+  }
+
   // stop timer when game ends
   $: if (state && (!state.alive || state.win)) { stopTimer(); }
+
+  // Play sounds when game state changes
+  $: if (state) {
+    // Check for win
+    if (state.win && !previousWin) {
+      soundManager.playWin();
+    }
+    // Check for lose
+    if (!state.alive && previousAlive && !state.win) {
+      soundManager.playLose();
+    }
+    // Update previous state
+    previousWin = state.win;
+    previousAlive = state.alive;
+  }
 
   function toggleTheme(){
     const el = document.documentElement;
@@ -159,6 +191,11 @@
     <div class="container py-4 flex items-center justify-between">
       <h1 class="text-xl font-semibold tracking-tight">Minesweeper</h1>
       <div class="flex items-center gap-2">
+        <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
+                on:click={toggleSound} 
+                title={soundEnabled ? 'Sound On' : 'Sound Off'}>
+          {soundEnabled ? '🔊' : '🔇'}
+        </button>
         <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
                 on:click={toggleTheme}>Toggle theme</button>
       </div>
