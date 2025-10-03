@@ -11,7 +11,9 @@ Creation Date: 1 September 2025
 from .models import (
     BoardStateModel,
     BoardSize,
-    BoardPos
+    BoardPos,
+    GameMode,
+    PlayerType
 )
 from .constants import (
     CELL_BLANK,
@@ -36,7 +38,7 @@ class Board:
     #TODO: change mine count to be user-specified, default 10x10 board, label columns and rows
     #TODO: add flags functionality and counter of remaining flags/mines
 
-    def __init__(self, mines: int):
+    def __init__(self, mines: int, game_mode: GameMode = GameMode.SOLO):
         self.mines: int = mines
         self.size: BoardSize = BoardSize(DEFAULT_ROWS, DEFAULT_COLS)
         # store board as array of ints where each int is the number of adjacent mines, CELL_MINE if mine
@@ -46,6 +48,63 @@ class Board:
         self.flags: list[list[bool]] = [[False for _ in range(self.size.cols)] for _ in range(self.size.rows)]
         self.flag_count: int = 0
         self.isAlive: bool = True
+        
+        # Co-op mode fields
+        self.game_mode: GameMode = game_mode
+        self.current_player: PlayerType = PlayerType.HUMAN
+        self.human_alive: bool = True
+        self.ai_alive: bool = True
+        self.winner: PlayerType | None = None
+        self.game_over: bool = False
+    
+    def handle_player_move(self, pos: BoardPos, player: PlayerType) -> bool:
+        """
+        Handle a move by a specific player in co-op mode.
+        Returns True if the move was successful, False if the player hit a mine.
+        """
+        if self.game_mode != GameMode.COOP:
+            return self.reveal_cell(pos)
+        
+        if self.current_player != player:
+            return False  # Not this player's turn
+        
+        if player == PlayerType.HUMAN and not self.human_alive:
+            return False  # Human player is out
+        if player == PlayerType.AI and not self.ai_alive:
+            return False  # AI player is out
+        
+        # Make the move
+        success = self.reveal_cell(pos)
+        
+        if not success:  # Player hit a mine
+            if player == PlayerType.HUMAN:
+                self.human_alive = False
+                self.winner = PlayerType.AI
+            else:  # AI player
+                self.ai_alive = False
+                self.winner = PlayerType.HUMAN
+            self.game_over = True
+        else:
+            # Switch turns
+            self.current_player = PlayerType.AI if player == PlayerType.HUMAN else PlayerType.HUMAN
+        
+        return success
+    
+    def check_coop_win(self) -> bool:
+        """
+        Check if the game is won in co-op mode (all non-mine cells revealed).
+        """
+        if self.game_mode != GameMode.COOP:
+            return self.check_win()
+        
+        # In co-op mode, if all cells are revealed without anyone hitting a mine,
+        # it's a draw (both players win)
+        if self.check_win() and not self.game_over:
+            self.winner = None  # Draw
+            self.game_over = True
+            return True
+        
+        return False
         
     def _hidden_neighbors(self, pos: BoardPos) -> list[BoardPos]:
         rows, cols = self.size.rows, self.size.cols
@@ -312,7 +371,14 @@ class Board:
             flags=flags,
             flag_count=self.flag_count,
             alive=self.isAlive,
-            win=self.check_win()
+            win=self.check_win(),
+            # Co-op mode fields
+            game_mode=self.game_mode,
+            current_player=self.current_player,
+            human_alive=self.human_alive,
+            ai_alive=self.ai_alive,
+            winner=self.winner,
+            game_over=self.game_over
         )
         
     

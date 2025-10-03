@@ -16,6 +16,9 @@
   let status = 'idle';
   let error = '';
   let rows = 10, cols = 10, mines = 10;
+  
+  // Debug: Log when values change
+  $: console.log('[DEBUG] Grid size changed:', { rows, cols, mines });
   let overlayDismissed = false;
 
   // timer
@@ -25,6 +28,14 @@
   // AI solver
   let solving = false;
   let solvingDifficulty = null;
+
+  // Co-op mode
+  let gameMode = 'solo'; // 'solo' or 'coop'
+  let aiDifficulty = 'medium';
+  let currentPlayer = 'human';
+  let humanAlive = true;
+  let aiAlive = true;
+  let winner = null;
 
   function formatTime(s){
     const m = Math.floor(s/60).toString().padStart(2,'0');
@@ -53,8 +64,13 @@
 
   async function newGame() {
     status = 'loading'; error = '';
+    console.log('[DEBUG] Creating new game with dimensions:', { rows, cols, mines, gameMode, aiDifficulty });
     try {
-      const res = await api.newGame({ rows, cols, mines });
+      const res = await api.newGame({ 
+        rows, cols, mines, 
+        game_mode: gameMode,
+        ai_difficulty: aiDifficulty 
+      });
       state = res.state;
       status = 'ready';
       overlayDismissed = false;
@@ -63,26 +79,189 @@
       stopTimer();
       timerSeconds = 0;
       startTimer();
+      
+      // Initialize co-op mode variables
+      if (gameMode === 'coop') {
+        currentPlayer = state.current_player || 'human';
+        humanAlive = state.human_alive !== false;
+        aiAlive = state.ai_alive !== false;
+        winner = state.winner;
+      }
     } catch (e) { error = e?.message ?? 'Failed'; status = 'error'; }
   }
 
   async function onCellClick(e) {
     const { row, col } = e.detail;
+    
+    // Check if it's human's turn in co-op mode
+    if (gameMode === 'coop' && currentPlayer !== 'human') {
+      return; // Not human's turn
+    }
+    
     const res = await api.click({ row, col });
     const refresh = await api.state();
     state = refresh.state;
+    
+    // Update co-op mode variables after human move
+    if (gameMode === 'coop') {
+      // Handle enum values from backend
+      const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+      currentPlayer = playerValue;
+      humanAlive = state.human_alive !== false;
+      aiAlive = state.ai_alive !== false;
+      winner = state.winner;
+      
+      console.log('[DEBUG] After human move:', { 
+        currentPlayer, 
+        humanAlive, 
+        aiAlive, 
+        game_over: state.game_over,
+        winner: state.winner,
+        raw_current_player: state.current_player,
+        playerValue
+      });
+      
+      // If it's now AI's turn, trigger AI move after delay
+      if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
+        console.log('[DEBUG] Triggering AI turn in 1 second...');
+        setTimeout(() => {
+          console.log('[DEBUG] AI turn timeout triggered');
+          aiTurn();
+        }, 1000);
+      } else {
+        console.log('[DEBUG] Not triggering AI turn:', {
+          currentPlayer,
+          aiAlive,
+          gameOver: state.game_over,
+          reason: currentPlayer !== 'ai' ? 'not AI turn' : !aiAlive ? 'AI not alive' : 'game over'
+        });
+      }
+    } else if (gameMode === 'solo') {
+      // SOLO mode: No AI involvement - just traditional single-player Minesweeper
+      console.log('[DEBUG] SOLO mode - no AI involvement, traditional single-player game');
+    } else {
+      console.log('[DEBUG] Unknown game mode:', gameMode);
+    }
   }
   async function onCellFlag(e) {
     const { row, col } = e.detail;
+    
+    // Check if it's human's turn in co-op mode
+    if (gameMode === 'coop' && currentPlayer !== 'human') {
+      return; // Not human's turn
+    }
+    
     const res = await api.toggleFlag({ row, col });
     state = res.state;
+    
+    // In co-op mode, flagging should also trigger AI turn after a delay
+    if (gameMode === 'coop') {
+      // Handle enum values from backend
+      const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+      currentPlayer = playerValue;
+      humanAlive = state.human_alive !== false;
+      aiAlive = state.ai_alive !== false;
+      winner = state.winner;
+      
+      console.log('[DEBUG] After human flag:', { 
+        currentPlayer, 
+        humanAlive, 
+        aiAlive, 
+        game_over: state.game_over,
+        winner: state.winner,
+        raw_current_player: state.current_player,
+        playerValue
+      });
+      
+      // Trigger AI turn after flagging if it's now AI's turn
+      if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
+        console.log('[DEBUG] Triggering AI turn after flag in 1.5 seconds...');
+        setTimeout(() => {
+          console.log('[DEBUG] AI turn after flag timeout triggered');
+          aiTurn();
+        }, 1500); // Slightly longer delay for flagging
+      } else {
+        console.log('[DEBUG] Not triggering AI turn after flag:', {
+          currentPlayer,
+          aiAlive,
+          gameOver: state.game_over,
+          reason: currentPlayer !== 'ai' ? 'not AI turn' : !aiAlive ? 'AI not alive' : 'game over'
+        });
+      }
+    } else if (gameMode === 'solo') {
+      // SOLO mode: No AI involvement - just traditional single-player Minesweeper
+      console.log('[DEBUG] SOLO mode - no AI involvement, traditional single-player game');
+    } else {
+      console.log('[DEBUG] Unknown game mode in flag:', gameMode);
+    }
+  }
+
+  // AI turn function for co-op mode
+  async function aiTurn() {
+    console.log('[DEBUG] aiTurn called:', { gameMode, currentPlayer, aiAlive });
+    
+    // For debugging, allow manual AI turn even if conditions aren't met
+    if (gameMode !== 'coop') {
+      console.log('[DEBUG] aiTurn aborted: not in co-op mode');
+      return;
+    }
+    
+    if (currentPlayer !== 'ai' && currentPlayer !== 'human') {
+      console.log('[DEBUG] aiTurn aborted: invalid current player:', currentPlayer);
+      return;
+    }
+    
+    if (!aiAlive) {
+      console.log('[DEBUG] aiTurn aborted: AI not alive');
+      return;
+    }
+    
+    try {
+      console.log('[DEBUG] Making AI turn API call...');
+      const res = await api.aiTurn();
+      console.log('[DEBUG] AI turn response:', res);
+      
+      if (res.error) {
+        console.error('[DEBUG] AI turn API error:', res.error);
+        error = res.error;
+        return;
+      }
+      
+      state = res.state;
+      
+      // Update co-op mode variables after AI move
+      const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+      currentPlayer = playerValue;
+      humanAlive = state.human_alive !== false;
+      aiAlive = state.ai_alive !== false;
+      winner = state.winner;
+      
+      console.log('[DEBUG] After AI move:', { 
+        currentPlayer, 
+        humanAlive, 
+        aiAlive, 
+        winner 
+      });
+    } catch (e) {
+      console.error('[DEBUG] AI turn error:', e);
+      error = e?.message ?? 'AI turn failed';
+    }
   }
 
   async function aiAction(difficulty) {
     try {
       const res = await api.aiMove(difficulty);
       if (res.error) { error = res.error; return null; }
-      state = res.state;
+      
+      // Update state from the AI move response
+      if (res.state) {
+        state = res.state;
+      } else {
+        // If no state in response, fetch current state
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+      
       return res;
     } catch (e) {
       error = e?.message ?? 'AI failed';
@@ -152,37 +331,57 @@
         <div class="grid grid-cols-3 gap-2">
           <label class="text-sm">Rows
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" bind:value={rows}/>
+                   type="number" min="5" max="30" step="1" bind:value={rows}/>
           </label>
           <label class="text-sm">Cols
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" bind:value={cols}/>
+                   type="number" min="5" max="30" step="1" bind:value={cols}/>
           </label>
           <label class="text-sm">Mines
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="1" max="300" bind:value={mines}/>
+                   type="number" min="1" max="300" step="1" bind:value={mines}/>
           </label>
         </div>
         <div class="text-xs text-slate-500 dark:text-slate-400">
           Max values — Rows: 30, Cols: 30, Mines: 300
         </div>
+        <div class="text-xs text-blue-600 dark:text-blue-400">
+          Current: {rows}×{cols}, {mines} mines
+        </div>
+        <!-- Game Mode Selection -->
+        <div class="space-y-2">
+          <h3 class="font-medium text-sm">Game Mode</h3>
+          <div class="flex gap-2">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" bind:group={gameMode} value="solo" />
+              <span class="text-sm">Solo Play</span>
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <input type="radio" bind:group={gameMode} value="coop" />
+              <span class="text-sm">Co-op vs AI</span>
+            </label>
+          </div>
+          {#if gameMode === 'coop'}
+            <div class="space-y-1">
+              <label class="text-sm">AI Difficulty</label>
+              <select class="input input-bordered w-full rounded-xl text-sm" bind:value={aiDifficulty}>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          {/if}
+        </div>
+
         <div class="flex gap-2">
           <button class="px-3 py-2 rounded-xl border bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  on:click={newGame}>Start</button>
+                  on:click={newGame}>Start New Game</button>
           <button class="px-3 py-2 rounded-xl border"
                   on:click={load}>Refresh</button>
         </div>
 
         <!-- AI Controls -->
         <div class="flex flex-wrap gap-2 mt-2">
-          <!-- Single-step AI -->
-          <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
-                  on:click={() => aiAction('easy')}>AI Easy (1 step)</button>
-          <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
-                  on:click={() => aiAction('medium')}>AI Medium (1 step)</button>
-          <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
-                  on:click={() => aiAction('hard')}>AI Hard (1 step)</button>
-
           <!-- Continuous AI Solve -->
           <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
                   on:click={() => aiSolve('easy')}>AI Solve (Easy)</button>
@@ -212,6 +411,21 @@
             <div>Alive: <span class="font-semibold">{state.alive ? 'Yes' : 'No'}</span></div>
             <div>Win: <span class="font-semibold">{state.win ? 'Yes' : 'No'}</span></div>
             <div>Grid: {state.rows}×{state.cols}</div>
+            
+            <!-- Co-op mode status -->
+            {#if gameMode === 'coop'}
+              <div class="border-t pt-2 mt-2 space-y-1">
+                <div class="font-medium text-xs text-slate-600 dark:text-slate-400">Co-op Mode</div>
+                <div>Current Turn: <span class="font-semibold">{currentPlayer === 'human' ? 'You' : 'AI'}</span></div>
+                <div>Human: <span class="font-semibold {humanAlive ? 'text-green-600' : 'text-red-600'}">{humanAlive ? 'Alive' : 'Lost'}</span></div>
+                <div>AI: <span class="font-semibold {aiAlive ? 'text-green-600' : 'text-red-600'}">{aiAlive ? 'Alive' : 'Lost'}</span></div>
+                {#if winner}
+                  <div class="font-semibold text-blue-600">
+                    Winner: {winner === 'human' ? 'You' : winner === 'ai' ? 'AI' : 'Draw'}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
@@ -230,7 +444,7 @@
           <div class="ml-auto text-sm font-mono">Time: <span class="font-semibold">{formatTime(timerSeconds)}</span></div>
         </div>
         {#if state}
-          <Board {state} on:cellClick={onCellClick} on:cellFlag={onCellFlag}/>
+          <Board {state} {gameMode} {currentPlayer} on:cellClick={onCellClick} on:cellFlag={onCellFlag}/>
         {/if}
 
         {#if state && (state.win || !state.alive) && !overlayDismissed}

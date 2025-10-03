@@ -1,5 +1,6 @@
 
 from pydantic import BaseModel, model_validator
+from enum import Enum
 
 from .constants import (
     DEFAULT_COLS,
@@ -8,6 +9,14 @@ from .constants import (
 )
 
 from dataclasses import dataclass
+
+class GameMode(str, Enum):
+    SOLO = "solo"           # Traditional single-player
+    COOP = "coop"           # Human vs AI turn-based
+
+class PlayerType(str, Enum):
+    HUMAN = "human"
+    AI = "ai"
 
 class BoardPos(BaseModel):
     """
@@ -43,6 +52,13 @@ class BoardStateModel(BaseModel):
     flag_count: int
     alive: bool
     win: bool
+    # Co-op mode fields
+    game_mode: GameMode = GameMode.SOLO
+    current_player: PlayerType = PlayerType.HUMAN
+    human_alive: bool = True
+    ai_alive: bool = True
+    winner: PlayerType | None = None
+    game_over: bool = False
 
     def __getitem__(self, key):
         return getattr(self, key)
@@ -62,6 +78,8 @@ class NewGameParams(BaseModel):
     cols: int = DEFAULT_COLS
     mines: int = DEFAULT_MINE_COUNT
     interactive: bool = False   # <--- NEW
+    game_mode: GameMode = GameMode.SOLO
+    ai_difficulty: str = "medium"  # for co-op mode
 
 class AIMove(BaseModel):
     action: str  # "reveal" | "flag" | "none"

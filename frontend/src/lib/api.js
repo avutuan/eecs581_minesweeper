@@ -20,10 +20,12 @@ export const api = MODE === 'http' ? {
   click: (body) => send('/api/click', { method: 'POST', body }),
   toggleFlag: (body) => send('/api/flag', { method: 'POST', body }),
   aiMove: (difficulty) => send(`/api/ai/${difficulty}`),   // <-- NEW
+  aiTurn: () => send('/api/ai-turn', { method: 'POST' }),  // <-- NEW for co-op mode
 } : {
   newGame: (params) => demo.newGame(params),
   state: () => demo.state(),
   click: (body) => demo.click(body),
   toggleFlag: (body) => demo.toggleFlag(body),
   aiMove: (difficulty) => demo.aiMove(difficulty),         // <-- NEW stub for demo mode
+  aiTurn: () => demo.aiTurn(),                              // <-- NEW stub for demo mode
 };
