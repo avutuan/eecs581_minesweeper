@@ -35,10 +35,28 @@ from .board import Board
 
 class Server:
     """
-    Encapsulates game state and exposes FastAPI routes without globals.
+    Description: Encapsulates the Minesweeper game state and exposes FastAPI
+    routes. This class avoids module-level globals by containing the FastAPI
+    application instance, the active Board, and related runtime flags. Routes
+    are registered on construction and operate against the instance's board
+    state.
+    Inputs: None
+    Outputs: None
+    Author(s): Nicholas Holmes
+    Creation Date: 18 September 2025
+    External Sources: FastAPI, pydantic
     """
 
     def __init__(self):
+        """
+        Description: Initialize the FastAPI app, CORS middleware, and routes.
+        Inputs: None
+        Outputs: None
+        Author(s): Nicholas Holmes
+        Creation Date: 18 September 2025
+        External Sources: FastAPI
+        """
+
         self.app = FastAPI()
 
         # Add CORS middleware to allow frontend to connect
@@ -61,7 +79,12 @@ class Server:
         @router.post(APIRoutes.API_ROUTE_NEW_GAME)
         def new_game(params: NewGameParams):
             """
-            Start a new game.
+            Description: Start a new game.
+            Inputs: params (NewGameParams) - validated new game parameters
+            Outputs: BoardFrontendModel containing ok/error and optional state
+            Author(s): Nicholas Holmes, Changwen Gong
+            Creation Date: 18 September 2025
+            External Sources: pydantic ValidationError
             """
             try:
                 self.game_mode = params.game_mode
@@ -84,10 +107,17 @@ class Server:
         @router.get(APIRoutes.API_ROUTE_STATE)
         def state():
             """
-            Return the current game state.
+            Description: Retrieve the current game state.
+            Inputs: None
+            Outputs: BoardFrontendModel with current state or error message
+            Author(s): Nicholas Holmes
+            Creation Date: 18 September 2025
+            External Sources: N/A
             """
+            # If no board exists, return an error
             if self.board is None:
                 return BoardFrontendModel(ok=False, error="No game in progress")
+            # Otherwise, return the current state
             state_model = self.board.to_dict(reveal_all=(not self.alive))
             return BoardFrontendModel(
                 ok=True,
@@ -99,7 +129,11 @@ class Server:
         @router.post(APIRoutes.API_ROUTE_CLICK)
         def click(c: BoardPos):
             """
-            Handle a user click.
+            Description: Process a click at the provided board position.
+            Outputs: BoardFrontendModel with updated state and alive/win status
+            Author(s): Nicholas Holmes, Kobe Jordan
+            Creation Date: 18 September 2025
+            External Sources: Board implementation
             """
             if self.board is None:
                 return BoardFrontendModel(ok=False, error="No board available to click")
@@ -146,7 +180,12 @@ class Server:
         @router.post(APIRoutes.API_ROUTE_FLAG)
         def toggle_flag(c: BoardPos):
             """
-            Toggle a flag at the given position.
+            Description: Toggle a flag at the provided board position.
+            Inputs: c (BoardPos) - position to toggle flag
+            Outputs: BoardFrontendModel with updated state
+            Author(s): Nicholas Holmes, Kobe Jordan
+            Creation Date: 18 September 2025
+            External Sources: N/A
             """
             if self.board is None:
                 return BoardFrontendModel(ok=False, error="No board available to flag")
@@ -182,9 +221,14 @@ class Server:
 
         @router.get("/api/ai/{difficulty}")
         def ai_move(difficulty: str):
-            # If board hasn't been initialized yet (no mines placed / first click),
-            # make a random first click so the AI has a starting point.
-            # This mirrors the normal first-click behavior used in the UI.
+            """
+            Description: Compute and apply an AI move based on the specified difficulty.
+            Inputs: difficulty (str) - one of 'easy', 'medium', 'hard'
+            Outputs: dict containing 'action', 'pos', and 'state' or an error
+            Author(s): Raj Kaura, Kobe Jordan
+            Creation Date: 1 October 2025
+            External Sources: N/A
+            """
             if not self.initialized:
                 rows = self.board.size.rows
                 cols = self.board.size.cols
@@ -236,7 +280,12 @@ class Server:
         @router.post("/api/ai-turn")
         def ai_turn():
             """
-            Handle AI turn in co-op mode.
+            Description: Compute and apply an AI move based on the specified difficulty.
+            Inputs: None (uses server's stored board & difficulty)
+            Outputs: BoardFrontendModel with updated state and alive/win flags
+            Author(s): Raj Kaura, Kobe Jordan
+            Creation Date: 1 October 2025
+            External Sources: N/A
             """
             print(f"[DEBUG] AI turn requested - game_mode: {self.game_mode}, current_player: {self.board.current_player if self.board else None}")
             print(f"[DEBUG] AI turn conditions - board exists: {self.board is not None}, game_mode: {self.game_mode}, current_player: {self.board.current_player if self.board else None}, ai_alive: {self.board.ai_alive if self.board else None}")

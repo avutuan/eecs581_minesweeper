@@ -18,6 +18,12 @@ from .constants import (
 
 class Controller:
     """
+    Description: A controller for the Minesweeper game.
+    External Sources: N/A
+    Author(s): Riley Meyerkorth
+    Creation Date: 10 September 2025
+    """
+    """
     A controller for the Minesweeper game.
     Mainly just runs a simple CLI game loop for testing.
     """

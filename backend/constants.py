@@ -8,12 +8,18 @@ Author(s): Riley Meyerkorth
 Creation Date: 10 September 2025
 """
 
-### API
+### API CONFIG
 API_HOST = "0.0.0.0"
 API_PORT = 8000
 API_PREFIX = "/api"
 
 class APIRoutes:
+    """
+    Description: Defines API route constants.
+    Author(s): Riley Meyerkorth
+    Creation Date: 10 September 2025
+    External Sources: N/A
+    """
     """
     Defines API route constants.
     """
@@ -53,6 +59,12 @@ KEY_QUIT = 'q'
 LETTER_TO_ROW = {chr(i + ord('A')): i for i in range(DEFAULT_ROWS)}
 
 class Direction:
+    """
+    Description: Enum-like class to represent possible movement directions.
+    Author(s): Riley Meyerkorth
+    Creation Date: 10 September 2025
+    External Sources: N/A
+    """
     """
     Enum-like class to represent possible movement directions.
     """
