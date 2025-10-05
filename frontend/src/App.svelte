@@ -11,6 +11,7 @@
 <script>
   import Board from './lib/Board.svelte';
   import { api } from './lib/api.js';
+  import { soundManager } from './lib/sounds.js';
 
   let state = null;
   let status = 'idle';
@@ -20,6 +21,16 @@
   // Debug: Log when values change
   $: console.log('[DEBUG] Grid size changed:', { rows, cols, mines });
   let overlayDismissed = false;
+  let soundEnabled = true;
+  
+  // Track previous game state to detect changes
+  let previousWin = false;
+  let previousAlive = true;
+  
+  // Validation constants
+  const MIN_ROWS = 10, MAX_ROWS = 20;
+  const MIN_COLS = 10, MAX_COLS = 20;
+  const MIN_MINES = 10, MAX_MINES = 20;
 
   // timer
   let timerSeconds = 0;
@@ -63,6 +74,31 @@
   }
 
   async function newGame() {
+    // Validate inputs before sending to server
+    if (rows < MIN_ROWS || rows > MAX_ROWS) {
+      error = `Rows must be between ${MIN_ROWS} and ${MAX_ROWS}`;
+      status = 'error';
+      return;
+    }
+    if (cols < MIN_COLS || cols > MAX_COLS) {
+      error = `Columns must be between ${MIN_COLS} and ${MAX_COLS}`;
+      status = 'error';
+      return;
+    }
+    if (mines < MIN_MINES || mines > MAX_MINES) {
+      error = `Mines must be between ${MIN_MINES} and ${MAX_MINES}`;
+      status = 'error';
+      return;
+    }
+    
+    const totalCells = rows * cols;
+    const maxAllowedMines = Math.min(MAX_MINES, totalCells - 1);
+    if (mines > maxAllowedMines) {
+      error = `Too many mines for board size. Maximum allowed: ${maxAllowedMines}`;
+      status = 'error';
+      return;
+    }
+    
     status = 'loading'; error = '';
     console.log('[DEBUG] Creating new game with dimensions:', { rows, cols, mines, gameMode, aiDifficulty });
     try {
@@ -71,9 +107,17 @@
         game_mode: gameMode,
         ai_difficulty: aiDifficulty 
       });
+      if (!res.ok) {
+        error = res.error || 'Failed to create new game';
+        status = 'error';
+        return;
+      }
       state = res.state;
       status = 'ready';
       overlayDismissed = false;
+      // Reset previous game state trackers
+      previousWin = false;
+      previousAlive = true;
       solving = false;
       solvingDifficulty = null;
       stopTimer();
@@ -92,57 +136,74 @@
 
   async function onCellClick(e) {
     const { row, col } = e.detail;
-    
-    // Check if it's human's turn in co-op mode
-    if (gameMode === 'coop' && currentPlayer !== 'human') {
-      return; // Not human's turn
-    }
-    
-    const res = await api.click({ row, col });
-    const refresh = await api.state();
-    state = refresh.state;
-    
-    // Update co-op mode variables after human move
-    if (gameMode === 'coop') {
-      // Handle enum values from backend
-      const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
-      currentPlayer = playerValue;
-      humanAlive = state.human_alive !== false;
-      aiAlive = state.ai_alive !== false;
-      winner = state.winner;
-      
-      console.log('[DEBUG] After human move:', { 
-        currentPlayer, 
-        humanAlive, 
-        aiAlive, 
-        game_over: state.game_over,
-        winner: state.winner,
-        raw_current_player: state.current_player,
-        playerValue
-      });
-      
-      // If it's now AI's turn, trigger AI move after delay
-      if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
-        console.log('[DEBUG] Triggering AI turn in 1 second...');
-        setTimeout(() => {
-          console.log('[DEBUG] AI turn timeout triggered');
-          aiTurn();
-        }, 1000);
-      } else {
-        console.log('[DEBUG] Not triggering AI turn:', {
-          currentPlayer,
-          aiAlive,
-          gameOver: state.game_over,
-          reason: currentPlayer !== 'ai' ? 'not AI turn' : !aiAlive ? 'AI not alive' : 'game over'
-        });
+    try {
+      // Check if it's human's turn in co-op mode
+      if (gameMode === 'coop' && currentPlayer !== 'human') {
+        return; // Not human's turn
       }
-    } else if (gameMode === 'solo') {
-      // SOLO mode: No AI involvement - just traditional single-player Minesweeper
-      console.log('[DEBUG] SOLO mode - no AI involvement, traditional single-player game');
-    } else {
-      console.log('[DEBUG] Unknown game mode:', gameMode);
+
+      const res = await api.click({ row, col });
+      // Use the state from the response first, then refresh for consistency
+      if (res.state) {
+        state = res.state;
+        // Check if a bomb was just revealed
+        if (state.revealed[row][col] && state.board[row][col] === -1) {
+          soundManager.playBomb();
+        }
+      } else {
+        const refresh = await api.state();
+        state = refresh.state;
+
+        // Update co-op mode variables after human move
+        if (gameMode === 'coop') {
+          // Handle enum values from backend
+          const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+          currentPlayer = playerValue;
+          humanAlive = state.human_alive !== false;
+          aiAlive = state.ai_alive !== false;
+          winner = state.winner;
+          
+          console.log('[DEBUG] After human move:', { 
+            currentPlayer, 
+            humanAlive, 
+            aiAlive, 
+            game_over: state.game_over,
+            winner: state.winner,
+            raw_current_player: state.current_player,
+            playerValue
+          });
+          
+          // If it's now AI's turn, trigger AI move after delay
+          if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
+            console.log('[DEBUG] Triggering AI turn in 1 second...');
+            setTimeout(() => {
+              console.log('[DEBUG] AI turn timeout triggered');
+              aiTurn();
+            }, 1000);
+          } else {
+            console.log('[DEBUG] Not triggering AI turn:', {
+              currentPlayer,
+              aiAlive,
+              gameOver: state.game_over,
+              reason: currentPlayer !== 'ai' ? 'not AI turn' : !aiAlive ? 'AI not alive' : 'game over'
+            });
+          }
+        } else if (gameMode === 'solo') {
+          // SOLO mode: No AI involvement - just traditional single-player Minesweeper
+          console.log('[DEBUG] SOLO mode - no AI involvement, traditional single-player game');
+        } else {
+          console.log('[DEBUG] Unknown game mode:', gameMode);
+        }
+      }
+    } catch (error) {
+      console.error('Error during cell click:', error);
+      // Refresh state on error to ensure consistency
+      const refresh = await api.state();
+      state = refresh.state;
     }
+    
   }
+  
   async function onCellFlag(e) {
     const { row, col } = e.detail;
     
@@ -151,48 +212,60 @@
       return; // Not human's turn
     }
     
-    const res = await api.toggleFlag({ row, col });
-    state = res.state;
-    
-    // In co-op mode, flagging should also trigger AI turn after a delay
-    if (gameMode === 'coop') {
-      // Handle enum values from backend
-      const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
-      currentPlayer = playerValue;
-      humanAlive = state.human_alive !== false;
-      aiAlive = state.ai_alive !== false;
-      winner = state.winner;
-      
-      console.log('[DEBUG] After human flag:', { 
-        currentPlayer, 
-        humanAlive, 
-        aiAlive, 
-        game_over: state.game_over,
-        winner: state.winner,
-        raw_current_player: state.current_player,
-        playerValue
-      });
-      
-      // Trigger AI turn after flagging if it's now AI's turn
-      if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
-        console.log('[DEBUG] Triggering AI turn after flag in 1.5 seconds...');
-        setTimeout(() => {
-          console.log('[DEBUG] AI turn after flag timeout triggered');
-          aiTurn();
-        }, 1500); // Slightly longer delay for flagging
+    try {
+      const res = await api.toggleFlag({ row, col });
+      // Use the state from the response, with fallback refresh
+      if (res.state) {
+        state = res.state;
+        // In co-op mode, flagging should also trigger AI turn after a delay
+        if (gameMode === 'coop') {
+          // Handle enum values from backend
+          const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+          currentPlayer = playerValue;
+          humanAlive = state.human_alive !== false;
+          aiAlive = state.ai_alive !== false;
+          winner = state.winner;
+          
+          console.log('[DEBUG] After human flag:', { 
+            currentPlayer, 
+            humanAlive, 
+            aiAlive, 
+            game_over: state.game_over,
+            winner: state.winner,
+            raw_current_player: state.current_player,
+            playerValue
+          });
+          
+          // Trigger AI turn after flagging if it's now AI's turn
+          if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
+            console.log('[DEBUG] Triggering AI turn after flag in 1.5 seconds...');
+            setTimeout(() => {
+              console.log('[DEBUG] AI turn after flag timeout triggered');
+              aiTurn();
+            }, 1500); // Slightly longer delay for flagging
+          } else {
+            console.log('[DEBUG] Not triggering AI turn after flag:', {
+              currentPlayer,
+              aiAlive,
+              gameOver: state.game_over,
+              reason: currentPlayer !== 'ai' ? 'not AI turn' : !aiAlive ? 'AI not alive' : 'game over'
+            });
+          }
+        } else if (gameMode === 'solo') {
+          // SOLO mode: No AI involvement - just traditional single-player Minesweeper
+          console.log('[DEBUG] SOLO mode - no AI involvement, traditional single-player game');
+        } else {
+          console.log('[DEBUG] Unknown game mode in flag:', gameMode);
+        }
       } else {
-        console.log('[DEBUG] Not triggering AI turn after flag:', {
-          currentPlayer,
-          aiAlive,
-          gameOver: state.game_over,
-          reason: currentPlayer !== 'ai' ? 'not AI turn' : !aiAlive ? 'AI not alive' : 'game over'
-        });
+        const refresh = await api.state();
+        state = refresh.state;
       }
-    } else if (gameMode === 'solo') {
-      // SOLO mode: No AI involvement - just traditional single-player Minesweeper
-      console.log('[DEBUG] SOLO mode - no AI involvement, traditional single-player game');
-    } else {
-      console.log('[DEBUG] Unknown game mode in flag:', gameMode);
+    } catch (error) {
+      console.error('Error during flag toggle:', error);
+      // Refresh state on error to ensure consistency
+      const refresh = await api.state();
+      state = refresh.state;
     }
   }
 
@@ -284,7 +357,7 @@
       // FIX: If AI has no moves ("none"), try random easy reveal to keep progressing
       if (!res || res.action === "none") {
         const fallback = await aiAction("easy");
-        if (!fallback || fallback.action === "none") {
+        if (!fallback || fallback.action === 'none') {
           solving = false; solvingDifficulty = null; return;
         }
       }
@@ -298,8 +371,27 @@
 
   function dismissOverlay(){ overlayDismissed = true; }
 
+  function toggleSound(){
+    soundEnabled = soundManager.toggle();
+  }
+
   // stop timer when game ends
   $: if (state && (!state.alive || state.win)) { stopTimer(); solving = false; solvingDifficulty = null; }
+
+  // Play sounds when game state changes
+  $: if (state) {
+    // Check for win
+    if (state.win && !previousWin) {
+      soundManager.playWin();
+    }
+    // Check for lose
+    if (!state.alive && previousAlive && !state.win) {
+      soundManager.playLose();
+    }
+    // Update previous state
+    previousWin = state.win;
+    previousAlive = state.alive;
+  }
 
   function toggleTheme(){
     const el = document.documentElement;
@@ -309,6 +401,9 @@
 
   $: flagsCount = state?.flags?.flat().filter(Boolean).length ?? 0;
   $: minesLeft = (state?.mines ?? mines) - flagsCount;
+  $: currentRows = state?.rows ?? rows;
+  $: currentCols = state?.cols ?? cols;
+  $: currentMines = state?.mines ?? mines;
 
   newGame(); // start immediately
 </script>
@@ -318,6 +413,11 @@
     <div class="container py-4 flex items-center justify-between">
       <h1 class="text-xl font-semibold tracking-tight">Minesweeper</h1>
       <div class="flex items-center gap-2">
+        <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
+                on:click={toggleSound} 
+                title={soundEnabled ? 'Sound On' : 'Sound Off'}>
+          {soundEnabled ? '🔊' : '🔇'}
+        </button>
         <button class="px-3 py-2 rounded-xl border hover:bg-slate-100 dark:hover:bg-slate-800"
                 on:click={toggleTheme}>Toggle theme</button>
       </div>
@@ -331,19 +431,19 @@
         <div class="grid grid-cols-3 gap-2">
           <label class="text-sm">Rows
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" step="1" bind:value={rows}/>
+                   type="number" min={MIN_ROWS} max={MAX_ROWS} step="1" bind:value={rows}/>
           </label>
           <label class="text-sm">Cols
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" step="1" bind:value={cols}/>
+                   type="number" min={MIN_COLS} max={MAX_COLS} step="1" bind:value={cols}/>
           </label>
           <label class="text-sm">Mines
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="1" max="300" step="1" bind:value={mines}/>
+                   type="number" min={MIN_MINES} max={MAX_MINES} step="1" bind:value={mines}/>
           </label>
         </div>
         <div class="text-xs text-slate-500 dark:text-slate-400">
-          Max values — Rows: 30, Cols: 30, Mines: 300
+          Rows: {MIN_ROWS}-{MAX_ROWS}, Cols: {MIN_COLS}-{MAX_COLS}, Mines: {MIN_MINES}-{MAX_MINES}
         </div>
         <div class="text-xs text-blue-600 dark:text-blue-400">
           Current: {rows}×{cols}, {mines} mines
@@ -410,7 +510,8 @@
             <div>Flags: <span class="font-semibold">{flagsCount}</span></div>
             <div>Alive: <span class="font-semibold">{state.alive ? 'Yes' : 'No'}</span></div>
             <div>Win: <span class="font-semibold">{state.win ? 'Yes' : 'No'}</span></div>
-            <div>Grid: {state.rows}×{state.cols}</div>
+            <div>Grid: <span class="font-semibold">{currentRows}×{currentCols}</span></div>
+            <div>Total mines: <span class="font-semibold">{currentMines}</span></div>
             
             <!-- Co-op mode status -->
             {#if gameMode === 'coop'}

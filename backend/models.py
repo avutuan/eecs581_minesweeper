@@ -1,11 +1,18 @@
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, model_validator, Field, ValidationError
+from typing import Optional, Union, List
 from enum import Enum
 
 from .constants import (
     DEFAULT_COLS,
     DEFAULT_MINE_COUNT,
-    DEFAULT_ROWS
+    DEFAULT_ROWS,
+    MIN_ROWS,
+    MAX_ROWS,
+    MIN_COLS,
+    MAX_COLS,
+    MIN_MINES,
+    MAX_MINES
 )
 
 from dataclasses import dataclass
@@ -46,9 +53,9 @@ class BoardStateModel(BaseModel):
     rows: int
     cols: int
     mines: int
-    board: list[list[int | None]]
-    revealed: list[list[bool]]
-    flags: list[list[bool]]
+    board: List[List[Optional[int]]]
+    revealed: List[List[bool]]
+    flags: List[List[bool]]
     flag_count: int
     alive: bool
     win: bool
@@ -65,22 +72,31 @@ class BoardStateModel(BaseModel):
 
 class BoardFrontendModel(BaseModel):
     ok: bool
-    alive: bool | None = None
-    win: bool | None = None
-    error: str | None = None
-    state: BoardStateModel | None = None
+    alive: Optional[bool] = None
+    win: Optional[bool] = None
+    error: Optional[str] = None
+    state: Optional[BoardStateModel] = None
 
     def __getitem__(self, key):
         return getattr(self, key)
 
 class NewGameParams(BaseModel):
-    rows: int = DEFAULT_ROWS
-    cols: int = DEFAULT_COLS
-    mines: int = DEFAULT_MINE_COUNT
+    rows: int = Field(default=DEFAULT_ROWS, ge=MIN_ROWS, le=MAX_ROWS)
+    cols: int = Field(default=DEFAULT_COLS, ge=MIN_COLS, le=MAX_COLS)
+    mines: int = Field(default=DEFAULT_MINE_COUNT, ge=MIN_MINES, le=MAX_MINES)
     interactive: bool = False   # <--- NEW
     game_mode: GameMode = GameMode.SOLO
     ai_difficulty: str = "medium"  # for co-op mode
 
+    @model_validator(mode='after')
+    def validate_mines_vs_cells(self):
+        total_cells = self.rows * self.cols
+        max_allowed_mines = min(MAX_MINES, total_cells - 1)  # Leave at least one safe cell
+        if self.mines > max_allowed_mines:
+            raise ValueError(f"Too many mines for board size. Maximum allowed: {max_allowed_mines}")
+        return self
+    
 class AIMove(BaseModel):
     action: str  # "reveal" | "flag" | "none"
     pos: BoardPos | None
+    

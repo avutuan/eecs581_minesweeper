@@ -14,18 +14,78 @@
   export let gameMode = 'solo'; // 'solo' or 'coop'
   export let currentPlayer = 'human'; // 'human' or 'ai'
   const dispatch = createEventDispatcher();
+  
+  // Track animations
+  let clickedCells = new Set();
+  let flaggedCells = new Set();
+  let revealedCells = new Set();
+  
+  // Track previously revealed cells to detect new reveals
+  let previouslyRevealed = new Set();
+  
+  $: {
+    if (state) {
+      const currentRevealed = new Set();
+      for (let r = 0; r < state.rows; r++) {
+        for (let c = 0; c < state.cols; c++) {
+          if (state.revealed[r][c]) {
+            const cellKey = `${r}-${c}`;
+            currentRevealed.add(cellKey);
+            // If this cell wasn't revealed before, add reveal animation
+            if (!previouslyRevealed.has(cellKey)) {
+              revealedCells.add(cellKey);
+              setTimeout(() => {
+                revealedCells.delete(cellKey);
+                revealedCells = revealedCells;
+              }, 400);
+            }
+          }
+        }
+      }
+      previouslyRevealed = currentRevealed;
+      revealedCells = revealedCells; // trigger reactivity
+    }
+  }
 
   function cellClick(r,c){ 
+    
     if (!state?.alive || state?.win) return; 
     // In co-op mode, only allow human clicks on human's turn
     if (gameMode === 'coop' && currentPlayer !== 'human') return;
+    
+    
+    // Add click animation
+    const cellKey = `${r}-${c}`;
+    clickedCells.add(cellKey);
+    clickedCells = clickedCells; // trigger reactivity
+    
+    // Remove animation after a short delay
+    setTimeout(() => {
+      clickedCells.delete(cellKey);
+      clickedCells = clickedCells;
+    }, 200);
+    
     dispatch('cellClick', { row:r, col:c }); 
+  
   }
+  
   function cellFlag(e, r, c){
     e.preventDefault();
     if (!state?.alive || state?.win) return;
     // In co-op mode, only allow human flags on human's turn
     if (gameMode === 'coop' && currentPlayer !== 'human') return;
+    
+    // Add flag animation
+    const cellKey = `${r}-${c}`;
+    flaggedCells.add(cellKey);
+    flaggedCells = flaggedCells; // trigger reactivity
+    
+    // Remove animation after a short delay
+    setTimeout(() => {
+      flaggedCells.delete(cellKey);
+      flaggedCells = flaggedCells;
+    }, 300);
+    
     dispatch('cellFlag', { row:r, col:c });
   }
 
@@ -90,25 +150,35 @@
             {rowLetter(r)}
           </div>
 
-          {#each Array(state.cols) as __, c}
-            {#key (r+'-'+c)}
-              <button
-                class={`aspect-square rounded-xl border ${state?.revealed[r][c]
-                ? "bg-slate-150 dark:bg-slate-900"  // revealed cells
-                : "bg-slate-100 dark:bg-slate-800"} // not revealed cells
-                hover:bg-slate-200 dark:hover:bg-slate-700 
-                disabled:opacity-70 
-                flex items-center justify-center
-                ${gameMode === 'coop' && currentPlayer !== 'human' ? 'cursor-not-allowed opacity-50' : ''}`}
-                on:click={() => cellClick(r,c)}
-                on:contextmenu={(e) => cellFlag(e, r, c)}
-                disabled={!state.alive || state.win || (gameMode === 'coop' && currentPlayer !== 'human')}
-                aria-label={`cell ${r},${c}`}>
-                <span class={`font-semibold text-2xl md:text-3xl leading-none ${cellColor(state.board[r][c])}`}>
-                  {cellContent(state.board[r][c], state.flags[r][c])}
-                </span>
-              </button>
-            {/key}
+          {#each Array(state.cols) as __, c (r + '-' + c)}
+            {@const cellKey = `${r}-${c}`}
+            {@const isClicked = clickedCells.has(cellKey)}
+            {@const isFlagged = flaggedCells.has(cellKey)}
+            {@const isNewlyRevealed = revealedCells.has(cellKey)}
+            <button
+              class={`aspect-square rounded-xl border 
+              ${state?.revealed[r][c]
+              ? "bg-slate-150 dark:bg-slate-900"  // revealed cells
+              : "bg-slate-100 dark:bg-slate-800"} // not revealed cells
+              hover:bg-slate-200 dark:hover:bg-slate-700 
+              disabled:opacity-70 
+              flex items-center justify-center
+              ${isClicked ? 'scale-95 bg-blue-200 dark:bg-blue-800' : ''}
+              ${isFlagged ? 'scale-110 bg-yellow-200 dark:bg-yellow-800' : ''}
+              ${isNewlyRevealed ? 'scale-105 bg-green-200 dark:bg-green-800 animate-pulse' : ''}
+              ${gameMode === 'coop' && currentPlayer !== 'human' ? 'cursor-not-allowed opacity-50' : ''}`}
+              on:click={() => cellClick(r,c)}
+              on:contextmenu={(e) => cellFlag(e, r, c)}
+              disabled={!state.alive || state.win || (gameMode === 'coop' && currentPlayer !== 'human')}
+              aria-label={`cell ${r},${c}`}>
+              <span class={`font-semibold text-2xl md:text-3xl leading-none transition-all duration-200 
+              ${cellColor(state.board[r][c])}
+              ${isClicked ? 'scale-90' : ''}
+              ${isFlagged ? 'scale-125' : ''}
+              ${isNewlyRevealed ? 'scale-110' : ''}`}>
+                {cellContent(state.board[r][c], state.flags[r][c])}
+              </span>
+            </button>
           {/each}
         {/each}
       {/if}

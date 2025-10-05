@@ -11,8 +11,9 @@ import random
 
 from typing import Optional
 
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 
 from .models import (
     BoardFrontendModel,
@@ -62,18 +63,23 @@ class Server:
             """
             Start a new game.
             """
-            self.game_mode = params.game_mode
-            self.ai_difficulty = params.ai_difficulty
-            self.board = Board(params.mines, self.game_mode)
-            self.board.size = BoardSize(params.rows, params.cols)
-            self.board.board = [[0 for _ in range(params.cols)] for _ in range(params.rows)]
-            self.board.revealed = [[False for _ in range(params.cols)] for _ in range(params.rows)]
-            self.board.flags = [[False for _ in range(params.cols)] for _ in range(params.rows)]
-            self.board.flag_count = 0
-            self.board.isAlive = True
-            self.initialized = False
-            self.alive = True
-            return BoardFrontendModel(ok=True, state=self.board.to_dict())
+            try:
+                self.game_mode = params.game_mode
+                self.ai_difficulty = params.ai_difficulty
+                self.board = Board(params.mines, self.game_mode)
+                self.board.size = BoardSize(params.rows, params.cols)
+                self.board.board = [[0 for _ in range(params.cols)] for _ in range(params.rows)]
+                self.board.revealed = [[False for _ in range(params.cols)] for _ in range(params.rows)]
+                self.board.flags = [[False for _ in range(params.cols)] for _ in range(params.rows)]
+                self.board.flag_count = 0
+                self.board.isAlive = True
+                self.initialized = False
+                self.alive = True
+                return BoardFrontendModel(ok=True, state=self.board.to_dict())
+            except ValidationError as e:
+                return BoardFrontendModel(ok=False, error=str(e))
+            except Exception as e:
+                return BoardFrontendModel(ok=False, error=f"Failed to create new game: {str(e)}")
 
         @router.get(APIRoutes.API_ROUTE_STATE)
         def state():

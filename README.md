@@ -11,6 +11,14 @@ This is the first project for EECS 581 - Software Engineering 2 at the Universit
 - **Quality Assurance & Testing Lead:** Andrew Reyes
 - **Documentation & Communication Lead:** Ty Farrington
 
+## Features
+
+- **Sound Effects**: The game includes audio feedback for key events:
+  - 🔊 **Win Sound**: An uplifting ascending melody plays when you successfully complete the game
+  - 💥 **Bomb Sound**: A dramatic explosion sound when you click on a mine
+  - 😢 **Lose Sound**: A descending melody when the game is lost
+  - Sound can be toggled on/off using the speaker button in the header
+
 ## Root Structure
 
 - `.gitignore` - ignores Node, Python, editor artifacts, etc.
