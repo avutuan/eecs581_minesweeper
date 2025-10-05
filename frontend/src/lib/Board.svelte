@@ -11,16 +11,49 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   export let state; // { rows, cols, board, flags, alive, win, ... }
+  export let gameMode = 'solo'; // 'solo' or 'coop'
+  export let currentPlayer = 'human'; // 'human' or 'ai'
   const dispatch = createEventDispatcher();
 
-  function cellClick(r,c){ if (!state?.alive || state?.win) return; dispatch('cellClick', { row:r, col:c }); }
+  function cellClick(r,c){ 
+    /*
+    Description: Handles a cell click event.
+    Inputs: row and column indices of the clicked cell
+    Outputs: dispatches 'cellClick' event with row and column
+    External Sources: N/A
+    Author(s): Nicholas Holmes
+    Creation Date: 18 September 2025
+    */
+    if (!state?.alive || state?.win) return; 
+    // In co-op mode, only allow human clicks on human's turn
+    if (gameMode === 'coop' && currentPlayer !== 'human') return;
+    dispatch('cellClick', { row:r, col:c }); 
+  }
   function cellFlag(e, r, c){
+    /*
+    Description: Handles a cell right-click (flag) event.
+    Inputs: row and column indices of the clicked cell
+    Outputs: dispatches 'cellFlag' event with row and column
+    External Sources: N/A
+    Author(s): Nicholas Holmes
+    Creation Date: 18 September 2025
+    */
     e.preventDefault();
     if (!state?.alive || state?.win) return;
+    // In co-op mode, only allow human flags on human's turn
+    if (gameMode === 'coop' && currentPlayer !== 'human') return;
     dispatch('cellFlag', { row:r, col:c });
   }
 
   function cellContent(val, flagged) {
+    /*
+    Description: Returns the content to display in a cell.
+    Inputs: cell value and flagged status
+    Outputs: string representing the cell content
+    External Sources: N/A
+    Author(s): Nicholas Holmes
+    Creation Date: 18 September 2025
+    */
     if (flagged) return '🚩';
     if (val === null) return '';
     if (val === -1) return '💣';
@@ -28,6 +61,14 @@
   }
 
   function cellColor(val) {
+    /*
+    Description: Returns the CSS class for the cell color based on its value.
+    Inputs: cell value
+    Outputs: string representing the CSS class for the cell color
+    External Sources: N/A
+    Author(s): Nicholas Holmes
+    Creation Date: 18 September 2025
+    */
     switch (val) {
       case 1: return "text-blue-600";
       case 2: return "text-green-600";
@@ -41,22 +82,28 @@
     }}
 </script>
 
+<!-- Board grid -->
 <div class="grid" style={`grid-template-columns: repeat(${state.cols}, minmax(0, 1fr)); gap: .5rem;`}>
+  <!-- Render each cell -->
   {#each Array(state.rows) as _, r}
     {#each Array(state.cols) as __, c}
+      <!-- Use a key to force re-rendering when state changes -->
       {#key (r+'-'+c)}
+        <!-- Cell button -->
         <button
           class={`aspect-square rounded-xl border ${state?.revealed[r][c]
           ? "bg-slate-150 dark:bg-slate-900"  // revealed cells
           : "bg-slate-100 dark:bg-slate-800"} // not revealed cells
           hover:bg-slate-200 dark:hover:bg-slate-700 
           disabled:opacity-70 
-          flex items-center justify-center`}
+          flex items-center justify-center
+          ${gameMode === 'coop' && currentPlayer !== 'human' ? 'cursor-not-allowed opacity-50' : ''}`}
           on:click={() => cellClick(r,c)}
           on:contextmenu={(e) => cellFlag(e, r, c)}
-          disabled={!state.alive || state.win}
+          disabled={!state.alive || state.win || (gameMode === 'coop' && currentPlayer !== 'human')}
           aria-label={`cell ${r},${c}`}
         >
+          <!-- Cell content -->
           <span class={`font-semibold text-2xl md:text-3xl leading-none ${cellColor(state.board[r][c])}`}>
             {cellContent(state.board[r][c], state.flags[r][c])}
           </span> 
