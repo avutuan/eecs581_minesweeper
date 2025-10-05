@@ -13,3 +13,22 @@ body { @apply bg-slate-50 text-slate-900; }
 input[type="number"], input[type="text"], input[type="search"], input[type="email"], input[type="password"] {
   @apply text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700;
 }
+
+/* Cell animations */
+.cell-bounce {
+  animation: bounce 0.3s ease-in-out;
+}
+
+.cell-pulse {
+  animation: pulse 0.4s ease-in-out;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}

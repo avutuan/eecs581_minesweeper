@@ -8,12 +8,18 @@ Author(s): Riley Meyerkorth
 Creation Date: 10 September 2025
 """
 
-### API
+### API CONFIG
 API_HOST = "0.0.0.0"
 API_PORT = 8000
 API_PREFIX = "/api"
 
 class APIRoutes:
+    """
+    Description: Defines API route constants.
+    Author(s): Riley Meyerkorth
+    Creation Date: 10 September 2025
+    External Sources: N/A
+    """
     """
     Defines API route constants.
     """
@@ -34,6 +40,14 @@ DEFAULT_ROWS = 10
 DEFAULT_COLS = 10
 DEFAULT_MINE_COUNT = 10
 
+# Validation constraints
+MIN_ROWS = 10
+MAX_ROWS = 20
+MIN_COLS = 10
+MAX_COLS = 20
+MIN_MINES = 10
+MAX_MINES = 20
+
 ### GAME_DATA
 CELL_MINE = -1
 CELL_BLANK = 0
@@ -45,6 +59,12 @@ KEY_QUIT = 'q'
 LETTER_TO_ROW = {chr(i + ord('A')): i for i in range(DEFAULT_ROWS)}
 
 class Direction:
+    """
+    Description: Enum-like class to represent possible movement directions.
+    Author(s): Riley Meyerkorth
+    Creation Date: 10 September 2025
+    External Sources: N/A
+    """
     """
     Enum-like class to represent possible movement directions.
     """
