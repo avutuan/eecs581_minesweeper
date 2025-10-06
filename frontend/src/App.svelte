@@ -275,7 +275,7 @@
       
       // Initialize co-op mode variables
       if (gameMode === 'coop') {
-        currentPlayer = state.current_player || 'human';
+        currentPlayer = state.currentxa_player || 'human';
         humanAlive = state.human_alive !== false;
         aiAlive = state.ai_alive !== false;
         winner = state.winner;
@@ -528,24 +528,25 @@
                   on:click={load}>Refresh</button>
         </div>
 
-        <!-- AI Controls -->
-        <div class="flex flex-wrap gap-2 mt-2">
-          <!-- Continuous AI Solve -->
-          <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
-                  on:click={() => aiSolve('easy')}>AI Solve (Easy)</button>
-          <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
-                  on:click={() => aiSolve('medium')}>AI Solve (Medium)</button>
-          <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
-                  on:click={() => aiSolve('hard')}>AI Solve (Hard)</button>
+  <!-- AI Controls (only visible in solo mode) -->
+  {#if gameMode === 'solo'}
+    <div class="flex flex-wrap gap-2 mt-2">
+      <!-- Continuous AI Solve -->
+      <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
+              on:click={() => aiSolve('easy')}>AI Solve (Easy)</button>
+      <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
+              on:click={() => aiSolve('medium')}>AI Solve (Medium)</button>
+      <button class="px-3 py-2 rounded-xl border bg-green-100 hover:bg-green-200 dark:bg-green-900 dark:hover:bg-green-800"
+              on:click={() => aiSolve('hard')}>AI Solve (Hard)</button>
 
-          <!-- Stop AI Solve -->
-          {#if solving}
-            <button class="px-3 py-2 rounded-xl border bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800"
-                    on:click={stopSolve}>Stop</button>
-            <span class="text-xs text-slate-500">Solving: {solvingDifficulty}</span>
-          {/if}
-        </div>
-      </div>
+      <!-- Stop AI Solve -->
+      {#if solving}
+        <button class="px-3 py-2 rounded-xl border bg-red-100 hover:bg-red-200 dark:bg-red-900 dark:hover:bg-red-800"
+                on:click={stopSolve}>Stop</button>
+        <span class="text-xs text-slate-500">Solving: {solvingDifficulty}</span>
+      {/if}
+    </div>
+  {/if}
 
       <!-- Status Display -->
       <div class="rounded-2xl border bg-white dark:bg-slate-950 p-4">
