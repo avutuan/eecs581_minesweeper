@@ -149,9 +149,19 @@
     console.log('[DEBUG] Creating new game with dimensions:', { rows, cols, mines, gameMode, aiDifficulty });
     try {
       const res = await api.newGame({ rows, cols, mines });
+      if (!res.ok) {
+        error = res.error || 'Failed to create new game';
+        status = 'error';
+        return;
+      }
+
       state = res.state;
       status = 'ready';
       overlayDismissed = false;
+      // Reset previous game state trackers
+      previousWin = false;
+      previousAlive = true;
+
       // reset timer and start
       stopTimer();
       timerSeconds = 0;
@@ -177,9 +187,20 @@
     Creation Date: 18 September 2025
     */
     const { row, col } = e.detail;
-    const res = await api.click({ row, col });
-    const refresh = await api.state(); // NEW: get updated state AFTER click
-    state = refresh.state;
+    try {
+      const res = await api.click({ row, col });
+      if (res.state) {
+        state = res.state;
+      } else {
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+    } catch (error) {
+      console.error('Error during cell click:', error);
+      // Refresh state on error to ensure consistency
+      const refresh = await api.state();
+      state = refresh.state;
+    }
   }
   
   async function onCellFlag(e) {
@@ -192,8 +213,21 @@
     Creation Date: 18 September 2025
     */
     const { row, col } = e.detail;
-    const res = await api.toggleFlag({ row, col });
-    state = res.state;
+    try {
+      const res = await api.toggleFlag({ row, col });
+      // Use the state from the response, with fallback refresh
+      if (res.state) {
+        state = res.state;
+      } else {
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+    } catch (error) {
+      console.error('Error during flag toggle:', error);
+      // Refresh state on error to ensure consistency
+      const refresh = await api.state();
+      state = refresh.state;
+    }
   }
 
   function dismissOverlay(){ 
@@ -275,15 +309,15 @@
         <div class="grid grid-cols-3 gap-2">
           <label class="text-sm">Rows
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" bind:value={rows}/>
+                   type="number" min={MIN_ROWS} max={MAX_ROWS} bind:value={rows}/>
           </label>
           <label class="text-sm">Cols
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="5" max="30" bind:value={cols}/>
+                   type="number" min={MIN_COLS} max={MAX_COLS}  bind:value={cols}/>
           </label>
           <label class="text-sm">Mines
             <input class="mt-1 input input-bordered w-full rounded-xl"
-                   type="number" min="1" max="300" bind:value={mines}/>
+                   type="number" min={MIN_MINES} max={MAX_MINES} bind:value={mines}/>
           </label>
         </div>
 
@@ -362,7 +396,8 @@
             <div>Flags: <span class="font-semibold">{flagsCount}</span></div>
             <div>Alive: <span class="font-semibold">{state.alive ? 'Yes' : 'No'}</span></div>
             <div>Win: <span class="font-semibold">{state.win ? 'Yes' : 'No'}</span></div>
-            <div>Grid: {state.rows}×{state.cols}</div>
+            <div>Grid: {currentRows}×{currentCols}</div>
+            <div>Total mines: <span class="font-semibold">{currentMines}</span></div>
           </div>
         {/if}
       </div>
