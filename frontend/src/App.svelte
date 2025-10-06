@@ -42,6 +42,105 @@
   let solving = false;
   let solvingDifficulty = null;
 
+  // AI move helper and turn runner (co-op)
+  async function aiAction(difficulty) {
+    try {
+      const res = await api.aiMove(difficulty);
+      if (res.error) { error = res.error; return null; }
+
+      // Update state from the AI move response if present
+      if (res.state) {
+        state = res.state;
+      } else {
+        // If no state in response, fetch current state
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+
+      return res;
+    } catch (e) {
+      error = e?.message ?? 'AI failed';
+      return null;
+    }
+  }
+
+  async function aiTurn() {
+    console.log('[DEBUG] aiTurn called:', { gameMode, currentPlayer, aiAlive });
+
+    if (gameMode !== 'coop') {
+      console.log('[DEBUG] aiTurn aborted: not in co-op mode');
+      return;
+    }
+
+    if (currentPlayer !== 'ai') {
+      console.log('[DEBUG] aiTurn aborted: not AI turn');
+      return;
+    }
+
+    if (!aiAlive) {
+      console.log('[DEBUG] aiTurn aborted: AI not alive');
+      return;
+    }
+
+    try {
+      console.log('[DEBUG] Making AI turn API call...');
+      const res = await api.aiTurn();
+      console.log('[DEBUG] AI turn response:', res);
+
+      if (res.error) {
+        console.error('[DEBUG] AI turn API error:', res.error);
+        error = res.error;
+        return;
+      }
+
+      if (res.state) {
+        state = res.state;
+      } else if (res.state === undefined) {
+        const refresh = await api.state();
+        state = refresh.state;
+      }
+
+      // Update co-op variables
+      const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+      currentPlayer = playerValue;
+      humanAlive = state.human_alive !== false;
+      aiAlive = state.ai_alive !== false;
+      winner = state.winner;
+
+      console.log('[DEBUG] After AI move:', { currentPlayer, humanAlive, aiAlive, winner });
+    } catch (e) {
+      console.error('[DEBUG] AI turn error:', e);
+      error = e?.message ?? 'AI turn failed';
+    }
+  }
+
+  // Continuous solver
+  async function aiSolve(difficulty){
+    if (!state || !state.alive || state.win) return;
+    solving = true;
+    solvingDifficulty = difficulty;
+
+    async function step(){
+      if (!solving) return;
+      if (!state.alive || state.win) { solving = false; solvingDifficulty = null; return; }
+
+      const res = await aiAction(difficulty);
+
+      // If AI has no moves, try fallback
+      if (!res || res.action === "none") {
+        const fallback = await aiAction("easy");
+        if (!fallback || fallback.action === "none") {
+          solving = false; solvingDifficulty = null; return;
+        }
+      }
+
+      setTimeout(step, 300); // delay between moves
+    }
+    step();
+  }
+
+  function stopSolve(){ solving = false; solvingDifficulty = null; }
+
   // Co-op mode
   let gameMode = 'solo'; // 'solo' or 'coop'
   let aiDifficulty = 'medium';
@@ -148,12 +247,19 @@
     status = 'loading'; error = '';
     console.log('[DEBUG] Creating new game with dimensions:', { rows, cols, mines, gameMode, aiDifficulty });
     try {
-      const res = await api.newGame({ rows, cols, mines });
+      const res = await api.newGame({
+        rows, cols, mines, 
+        game_mode: gameMode, 
+        ai_difficulty: aiDifficulty 
+      });
       if (!res.ok) {
         error = res.error || 'Failed to create new game';
         status = 'error';
         return;
       }
+
+      solving = false;
+      solvingDifficulty = null;
 
       state = res.state;
       status = 'ready';
@@ -188,6 +294,12 @@
     */
     const { row, col } = e.detail;
     try {
+      // Co-op: ensure it's the human's turn
+      if (gameMode === 'coop' && currentPlayer !== 'human') {
+        console.log('[DEBUG] onCellClick ignored: not human turn');
+        return;
+      }
+
       const res = await api.click({ row, col });
       if (res.state) {
         state = res.state;
@@ -199,9 +311,24 @@
         const refresh = await api.state();
         state = refresh.state;
       }
+
+      // Co-op post-move handling: update turn/state and possibly trigger AI
+      if (gameMode === 'coop') {
+        const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+        currentPlayer = playerValue;
+        humanAlive = state.human_alive !== false;
+        aiAlive = state.ai_alive !== false;
+        winner = state.winner;
+
+        console.log('[DEBUG] After human move:', { currentPlayer, humanAlive, aiAlive, game_over: state.game_over, winner });
+
+        if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
+          console.log('[DEBUG] Triggering AI turn in 1 second...');
+          setTimeout(() => { aiTurn(); }, 1000);
+        }
+      }
     } catch (error) {
       console.error('Error during cell click:', error);
-      // Refresh state on error to ensure consistency
       const refresh = await api.state();
       state = refresh.state;
     }
@@ -218,6 +345,12 @@
     */
     const { row, col } = e.detail;
     try {
+      // Co-op: ensure it's the human's turn
+      if (gameMode === 'coop' && currentPlayer !== 'human') {
+        console.log('[DEBUG] onCellFlag ignored: not human turn');
+        return;
+      }
+
       const res = await api.toggleFlag({ row, col });
       // Use the state from the response, with fallback refresh
       if (res.state) {
@@ -225,6 +358,20 @@
       } else {
         const refresh = await api.state();
         state = refresh.state;
+      }
+
+      // Co-op: update turn and possibly trigger AI
+      if (gameMode === 'coop') {
+        const playerValue = typeof state.current_player === 'string' ? state.current_player : 'human';
+        currentPlayer = playerValue;
+        humanAlive = state.human_alive !== false;
+        aiAlive = state.ai_alive !== false;
+        winner = state.winner;
+
+        if (currentPlayer === 'ai' && aiAlive && !state.game_over) {
+          console.log('[DEBUG] Triggering AI turn after flag in 1.5 seconds...');
+          setTimeout(() => { aiTurn(); }, 1500);
+        }
       }
     } catch (error) {
       console.error('Error during flag toggle:', error);
@@ -417,6 +564,21 @@
             <div>Win: <span class="font-semibold">{state.win ? 'Yes' : 'No'}</span></div>
             <div>Grid: {currentRows}×{currentCols}</div>
             <div>Total mines: <span class="font-semibold">{currentMines}</span></div>
+
+            <!-- Co-op mode status -->
+            {#if gameMode === 'coop'}
+              <div class="border-t pt-2 mt-2 space-y-1">
+                <div class="font-medium text-xs text-slate-600 dark:text-slate-400">Co-op Mode</div>
+                <div>Current Turn: <span class="font-semibold">{currentPlayer === 'human' ? 'You' : 'AI'}</span></div>
+                <div>Human: <span class="font-semibold {humanAlive ? 'text-green-600' : 'text-red-600'}">{humanAlive ? 'Alive' : 'Lost'}</span></div>
+                <div>AI: <span class="font-semibold {aiAlive ? 'text-green-600' : 'text-red-600'}">{aiAlive ? 'Alive' : 'Lost'}</span></div>
+                {#if winner}
+                  <div class="font-semibold text-blue-600">
+                    Winner: {winner === 'human' ? 'You' : winner === 'ai' ? 'AI' : 'Draw'}
+                  </div>
+                {/if}
+              </div>
+            {/if}
           </div>
         {/if}
       </div>
